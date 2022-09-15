@@ -3,7 +3,7 @@
  * Project: vue-read
  * Created Date: 2022-09-15
  * Author: lh(linhai<linhaibcf@gmail.com>)
- * Module Name: 响应式模块根
+ * Module Name: 响应式模块根文件
 *******************************************************************************/
 
 import reactive from './reactive.js';
