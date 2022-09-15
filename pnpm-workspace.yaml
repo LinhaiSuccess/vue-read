@@ -1,0 +1,11 @@
+################################################################################
+ # File: /pnpm-workspace.yaml
+ # Project: vue-read
+ # Created Date: 2022-09-15
+ # Author: lh(linhai<linhaibcf@gmail.com>)
+ # Module Name: pnpm工作空间配置
+ # Description: 将所有模块都放到 packages 下
+################################################################################
+
+packages: 
+  - 'packages/*'
