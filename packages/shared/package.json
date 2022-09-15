@@ -1,7 +1,7 @@
 {
   "name": "@vue/shared",
   "version": "1.0.0",
-  "description": "共享模块",
+  "description": "Vue共享模块",
   "main": "index.js",
   "buildOptions": {
     "formats": [
