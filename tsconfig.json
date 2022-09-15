@@ -1,23 +1,18 @@
 {
   "compilerOptions": {
-    "baseUrl": ".", // 以当前目录为基准
-    "jsx": "preserve", // jsx 不转义
-    "target": "ES2016", // 目标语法
-    "module": "ESNext", // 模块格式
-    "outDir": "dist", // 输出的目录
-    "sourceMap": true, // 采用 sourceMap
-    "strict": false, // 不启用严格模式
-    "moduleResolution": "Node", // 模块解析方式
-    "resolveJsonModule": true, // 解析JSON模块
-    "esModuleInterop": true, // 允许通过 es6 语法引入 commonjs 模块
-    "lib": [
-      "ESNext",
-      "DOM"
-    ], // 支持的类库 ESNext 和 DOM
+    "baseUrl": ".",                 // 以当前目录为基准
+    "jsx": "preserve",              // jsx 不转义
+    "target": "ES2016",             // 目标语法
+    "module": "ESNext",             // 模块格式
+    "outDir": "dist",               // 输出的目录
+    "sourceMap": true,              // 采用 sourceMap
+    "strict": false,                // 不启用严格模式
+    "moduleResolution": "Node",     // 模块解析方式
+    "resolveJsonModule": true,      // 解析JSON模块
+    "esModuleInterop": true,        // 允许通过 es6 语法引入 commonjs 模块
+    "lib": [ "ESNext", "DOM" ],     // 支持的类库 ESNext 和 DOM
     "paths": {
-      "@vue/*": [
-        "packages/*/src"
-      ] // 以 @vue/* 开头的路径，都去 packages/*/src 去找
+      "@vue/*": ["packages/*/src"]  // 以 @vue/* 开头的路径，都去 packages/*/src 去找
     }
   }
 }
