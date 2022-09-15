@@ -1,0 +1,14 @@
+{
+  "name": "@vue/reactivity",
+  "version": "1.0.0",
+  "description": "响应式模块",
+  "main": "index.js",
+  "buildOptions": {
+    "name": "VueReactivity",
+    "formats": [
+      "global",
+      "cjs",
+      "esm-bundler"
+    ]
+  }
+}
