@@ -60,11 +60,11 @@ Vue的设计理念和架构封装非常有益于自我提升，尤其是Vue3的�
 
 **响应式**
 
-- [ ] reactive
+- [x] reactive（未完成）
 - [ ] shallowReactive
 - [ ] readonly
 - [ ] shallowReadonly
-- [ ] effect
+- [x] effect（未完成）
 - [ ] ref
 - [ ] shallowRef
 - [ ] proxyRefs

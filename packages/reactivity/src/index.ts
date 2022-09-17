@@ -6,5 +6,5 @@
  * Module Name: 响应式模块
  */
 
+export { activeEffect, effect, ReactiveEffect } from './effect';
 export { isReadonly, reactive, readonly, toRaw } from './reactive';
-

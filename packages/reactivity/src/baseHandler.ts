@@ -8,6 +8,7 @@
  */
 
 import { isObject } from '@vue/shared';
+import { track } from './effect';
 import { reactive, ReactiveFlags, reactiveMap, readonly, readonlyMap, shallowReactiveMap, shallowReadonlyMap } from "./reactive";
 
 /**
@@ -40,6 +41,13 @@ function createGetter(isReadonly = false, shallow = false) {
 
     // 从对象中取出数据
     const result = Reflect.get(target, key, receiver);
+
+    // 如果不是只读，则依赖收集
+    // 只读为什么不依赖收集，因为只读无法修改值，依赖收集了也没啥用
+    if (!isReadonly) {
+      track(target, key);
+    }
+
     // 如果是 浅的，就不需要继续往下了，直接返回取出的值即可
     if (shallow) {
       return result;
