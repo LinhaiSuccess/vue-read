@@ -7,9 +7,9 @@
  * Description: 基本handler来处理 reactive、readonly 及浅代理的逻辑
  */
 
-import { hasOwn, isArray, isObject } from '@vue/shared';
-import { track } from './effect';
-import { reactive, ReactiveFlags, reactiveMap, readonly, readonlyMap, shallowReactiveMap, shallowReadonlyMap, toRaw } from "./reactive";
+import { hasChanged, hasOwn, isArray, isIntegerKey, isObject } from '@vue/shared';
+import { track, trigger } from './effect';
+import { isReadonly, isShallow, reactive, ReactiveFlags, reactiveMap, readonly, readonlyMap, shallowReactiveMap, shallowReadonlyMap, toRaw } from "./reactive";
 
 // 数组仪表对象（当代理拦截到的是数组，则使用这里）
 const arrayInstrumentations = createArrayInstrumentations();
@@ -114,16 +114,82 @@ function createGetter(isReadonly = false, shallow = false) {
   }
 }
 
+/**
+ * 获取代理 set 操作
+ * @param shallow 是否浅代理
+ */
+function createSetter(shallow = false) {
+  return function set(target, key, value, receiver) {
+    // 取出旧值
+    let oldValue = target[key];
+    // 如果旧值是只读，直接返回false，不修改
+    if (isReadonly(oldValue)) {
+      return false;
+    }
+    // 如果参数不是浅的，而且新值还不是只读，而且新值还是深度代理，则将新旧值都转换为原始值
+    if (!shallow && !isReadonly(value) && !isShallow(value)) {
+      value = toRaw(value);
+      oldValue = toRaw(oldValue);
+    }
+
+    // 取值
+    const result = Reflect.set(target, key, value, receiver);
+
+    // 如果 目标对象 和 当前代理对象对应的源对象相等则可能执行视图更新
+    if (target === toRaw(receiver)) {
+      // 如果源对象是数组而且key还是下标，则判断当前下标是否小于数组的长度（数组越界）
+      // 否则就不是数组，就看取的key是否为对象自身的属性，而不是原型链继承过来的
+      const hadKey = isArray(target) && isIntegerKey(key) ? Number(key) < target.length : hasOwn(target, key);
+      if (!hadKey) {
+        // hadKey 为false，就证明是新增，可能是数组新push，也可能是对象新增属性
+        trigger(target, 'add', key);
+      } else if (hasChanged(value, oldValue)) {
+        // 新值和旧值不一样，属性更新
+        trigger(target, 'set', key)
+      }
+    }
+    return result;
+  }
+}
+
+/**
+ * 删除属性
+ * @param target 目前对象
+ * @param key 属性key
+ * @returns 删除是否成功
+ */
+function deleteProperty(target, key) {
+  // 确保不是原型链上的属性
+  const hadKey = hasOwn(target, key);
+  // 删除属性
+  const result = Reflect.deleteProperty(target, key);
+  // 属性删除成功，并且还是自己的属性，触发更新
+  (result && hadKey) && trigger(target, 'delete', key);
+  return result;
+}
+
 // get
 const get = createGetter();
 const readonlyGet = createGetter(true);
+// set
+const set = createSetter();
 
 // 可变 handlers（reactive使用）
 export const mutableHandlers = {
-  get
+  get,
+  set,
+  deleteProperty
 };
 
 // 只读 handlers（readonly使用）
 export const readonlyHandlers = {
-  get: readonlyGet
+  get: readonlyGet,
+  set(target, key) {
+    console.warn(`设置 ${String(key)} 操作失败，因为它是只读的`, target);
+    return true
+  },
+  deleteProperty(target, key) {
+    console.warn(`删除 ${String(key)} 操作失败，因为它是只读的`, target);
+    return true
+  }
 };

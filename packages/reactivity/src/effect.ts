@@ -9,6 +9,8 @@
  *    effect 所包装的 fn 函数就是触发更新时所执行的函数，当响应式变量变化后会重新执行diff算法对比组件变化到达模板更新的效果
  */
 
+import { isArray, isIntegerKey } from "@vue/shared";
+
 // 导出当前活动的effect全局变量的引用
 // 为什么敢这么做？是因为JS是单线程的，不需要考虑多个线程并发导致不准的情况
 export let activeEffect;
@@ -124,4 +126,73 @@ export function trackEffects(dep) {
     // 比如模板中出现了三元表达式，根据状态决定使用哪个响应式对象，当状态变化后，条件不满足的属性更新不应该再触发视图更新
     activeEffect.deps.push(dep);
   }
+}
+
+/**
+ * 触发更新
+ * @param target 目标对象
+ * @param type 类型
+ * @param key 目标对象的属性key
+ */
+export function trigger(target, type, key) {
+  // 根据源对象获取对应的 Map
+  const depsMap = targetMap.get(target);
+  if (!depsMap) {
+    // 触发的对象没有在模板中使用，不触发更新
+    return;
+  }
+  // 会触发更新的 effect 容器
+  const deps = [];
+  if (key === 'length' && isArray(target)) {
+    // 如果目标对象是数组，而且获取的还是 length，则收集length对应的effect
+    depsMap.forEach((dep, key) => {
+      if (key === 'length') {
+        deps.push(dep);
+      }
+    });
+  } else {
+    if (key !== void 0) {
+      // key不是 undefined，根据属性key拿到Set集合
+      deps.push(depsMap.get(key));
+    }
+    if (type === 'add' && isArray(target) && isIntegerKey(key)) {
+      // 是数组，而且key还是元素下标，将 length 对应的effect添加到容器中
+      deps.push(depsMap.get('length'));
+    }
+  }
+
+  if (deps.length === 1 && deps[0] !== void 0) {
+    // 只有一个元素，而且还不是空，直接触发
+    triggerEffects(deps[0]);
+  } else {
+    const effects = [];
+    // 因为可能有 undefined，所以一个个来
+    for (const dep of deps) {
+      if (dep) {
+        effects.push(...dep);
+      }
+    }
+    if (effects.length) {
+      // 触发 triggerEffects
+      triggerEffects(new Set(effects));
+    }
+  }
+}
+
+/**
+ * 触发 dep
+ * @param dep effect集合
+ */
+export function triggerEffects(dep) {
+  // 注意：这里必须先拷贝一份，否则会死循环
+  //    因为执行下面的 run 时，run方法 会先删除里面所有内容，接下来会执行 fn函数，fn函数 会再次收集进来，这边的 run 再删，里面再收集...
+  const effects = isArray(dep) ? dep : [...dep];
+  // 遍历拷贝后的数组
+  effects.forEach(effect => {
+    // 就是防止在 effect 里修改值，来这里触发更新，这里再执行 effect ，里面执行时又修改值，会死循环，所以先过滤掉当前激活的 effect
+    if (effect !== activeEffect) {
+      // 执行 run（内部会执行 fn）
+      effect.run();
+    }
+  });
 }

@@ -108,3 +108,13 @@ export function toRaw(observed) {
   // 如果从代理中拿到了原始对象，则继续递归获取（如果只代理了一次，再次执行会原地返回），否则如果代理中没有获取到，则原地返回
   return raw ? toRaw(raw) : observed;
 }
+
+/**
+ * 是否浅代理
+ * 
+ * @param value 要判断的值
+ * @returns 是否浅代理
+ */
+export function isShallow(value) {
+  return !!(value && value[ReactiveFlags.IS_SHALLOW]);
+}

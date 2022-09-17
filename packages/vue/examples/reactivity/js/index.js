@@ -3,15 +3,15 @@
  * Project: vue-read
  * Created Date: 2022-09-15
  * Author: lh(linhai<linhaibcf@gmail.com>)
- * Module Name: 响应式模块根文件
+ * Module Name: 响应式模块测试入口
 *******************************************************************************/
 
-import reactive from './reactive.js';
+import effect from './effect.js';
 
 // 执行
 run();
 
 // 运行函数
 function run() {
-  reactive();
+  effect();
 }
