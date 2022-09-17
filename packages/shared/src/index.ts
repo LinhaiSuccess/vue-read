@@ -11,3 +11,13 @@
 export const isObject = value => {
   return typeof value === 'object' && value !== null;
 }
+
+// 是否数组
+export const isArray = Array.isArray;
+
+// 是否自身属性
+const hasOwnProperty = Object.prototype.hasOwnProperty;
+export const hasOwn = (value, key) => {
+  // 防止对象上真有 hasOwnProperty 的属性，我们直接使用原型链上的函数
+  return hasOwnProperty.call(value, key);
+}

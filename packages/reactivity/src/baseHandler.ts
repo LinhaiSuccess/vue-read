@@ -7,9 +7,54 @@
  * Description: 基本handler来处理 reactive、readonly 及浅代理的逻辑
  */
 
-import { isObject } from '@vue/shared';
+import { hasOwn, isArray, isObject } from '@vue/shared';
 import { track } from './effect';
-import { reactive, ReactiveFlags, reactiveMap, readonly, readonlyMap, shallowReactiveMap, shallowReadonlyMap } from "./reactive";
+import { reactive, ReactiveFlags, reactiveMap, readonly, readonlyMap, shallowReactiveMap, shallowReadonlyMap, toRaw } from "./reactive";
+
+// 数组仪表对象（当代理拦截到的是数组，则使用这里）
+const arrayInstrumentations = createArrayInstrumentations();
+
+/**
+ * 创建数组仪表
+ *  主要针对数组代理
+ *  如执行 includes 时应该通过源对象去执行，而不是代理对象，因为被代理过的都是Proxy，肯定不包含
+ */
+function createArrayInstrumentations() {
+  // 存放收集后的对象
+  const instrumentations = {};
+
+  // 遍历如下函数名
+  ['includes', 'indexOf', 'lastIndexOf'].forEach(key => {
+    // 给对象添加函数
+    instrumentations[key] = function (this, ...args) {
+      // 将代理数组变成源数组
+      const arr = toRaw(this);
+      for (let i = 0; i < this.length; i++) {
+        // 依赖收集 源对象、get、字符串类型的下标（就是key）
+        track(arr, i + '');
+      }
+      // 执行原始数组方法，获得结果（这里的参数不做任何处理，因为可能参数就是代理对象）
+      const res = arr[key](...args);
+      if (res === -1 || res === false) {
+        // 执行原始数组方法得到 -1 或者 false，证明没有找到，再尝试把参数也转换为原始对象
+        return arr[key](...args.map(toRaw));
+      } else {
+        // 通过原始数组 + 用户传递的参数能够获取到，直接返回
+        return res;
+      }
+    }
+  });
+
+  // 遍历如下函数名
+  ['push', 'pop', 'shift', 'unshift', 'splice'].forEach(key => {
+    instrumentations[key] = function (this, ...args) {
+      // 将代理数组转换为原始数组，并执行该方法（将方法内的指向改为代理数组）
+      return toRaw(this)[key].apply(this, args);
+    }
+  });
+  // 返回
+  return instrumentations;
+}
 
 /**
  * 获取代理 get 操作
@@ -39,6 +84,14 @@ function createGetter(isReadonly = false, shallow = false) {
       return target;
     }
 
+    // 是否数组
+    const targetIsArray = isArray(target);
+    // 数组处理，如果不是只读的，并且还是数组，属性名也在 数组仪表对象中，则从数组仪表中取值
+    // 这里主要是针对数组中的方法，如 push、pop、includes 等...
+    if (!isReadonly && targetIsArray && hasOwn(arrayInstrumentations, key)) {
+      return Reflect.get(arrayInstrumentations, key, receiver);
+    }
+
     // 从对象中取出数据
     const result = Reflect.get(target, key, receiver);
 
@@ -54,7 +107,7 @@ function createGetter(isReadonly = false, shallow = false) {
     }
     // 如果是对象
     if (isObject(result)) {
-      // 是对象，继续深度代理（Vue3在取值时再去深度代理性能提高了很多，属于懒代理）
+      // 是对象，继续深度代理
       return isReadonly ? readonly(result) : reactive(result);
     }
     return result;

@@ -6,12 +6,12 @@
  * Module Name: 响应式模块根文件
 *******************************************************************************/
 
-import effect from './effect.js';
+import reactive from './reactive.js';
 
 // 执行
 run();
 
 // 运行函数
 function run() {
-  effect();
+  reactive();
 }

@@ -24,7 +24,7 @@ VueRead的代码实现是为了更好的阅读和理解Vue3。
 
 VueRead中没有Vue的兼容以及细节处理的逻辑，突出了功能核心实现，再配有详细的注释，相信大家可以很轻松的掌握每个核心功能点。
 
-此项目中的函数名和变量名尽量与Vue源码保持一致，让小伙伴们读完此项目后，再去读Vue3源码可以如鱼得水，轻松自如。
+此项目中的函数名和变量名尽量与Vue源码保持一致，让同学们读完此项目后，再去读Vue3源码可以更好的理解。
 
 部分功能实现上可能会和Vue源码有所差别，是因为Vue源码中为了做兼容将功能实现复杂化，不利于源码阅读和理解。
 
@@ -105,7 +105,7 @@ Vue的设计理念和架构封装非常有益于自我提升，尤其是Vue3的�
 当功能都实现后，可使用如下模板测试
 
 ```vue
-<layout>
+<Layout>
   <template #top>
     输入：<input type="text" v-model="name"/>
     <br/>
@@ -121,13 +121,13 @@ Vue的设计理念和架构封装非常有益于自我提升，尤其是Vue3的�
     描述：<span v-text="description"></span> <br/>
     <button @click="submit('b1')">提交</button>
   </template>
-</layout>
+</Layout>
 
-<user :info="userInfo" :callback="cb" v-model:error="errorPrompt">
+<User :info="userInfo" :callback="cb" v-model:error="errorPrompt">
   <template v-slot={message}>
     <p :style="{color: 'blue'}">{{message}}</p>
   </template>
-</user>
+</User>
 ```
 
 > vue 包下有测试示例，在 examples 文件夹中
