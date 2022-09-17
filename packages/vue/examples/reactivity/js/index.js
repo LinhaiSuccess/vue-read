@@ -6,12 +6,12 @@
  * Module Name: 响应式模块测试入口
 *******************************************************************************/
 
-import effect from './effect.js';
+import ref from './ref.js';
 
 // 执行
 run();
 
 // 运行函数
 function run() {
-  effect();
+  ref();
 }

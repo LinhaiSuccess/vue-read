@@ -65,8 +65,8 @@ Vue的设计理念和架构封装非常有益于自我提升，尤其是Vue3的�
 - [x] readonly
 - [x] shallowReadonly
 - [x] effect
-- [ ] ref - 待完成
-- [ ] shallowRef - 待完成
+- [x] ref
+- [x] shallowRef
 - [ ] proxyRefs - 待完成
 - [ ] toRef - 待完成
 - [ ] computed - 待完成
