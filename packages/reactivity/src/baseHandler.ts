@@ -10,6 +10,7 @@
 import { hasChanged, hasOwn, isArray, isIntegerKey, isObject } from '@vue/shared';
 import { track, trigger } from './effect';
 import { isReadonly, isShallow, reactive, ReactiveFlags, reactiveMap, readonly, readonlyMap, shallowReactiveMap, shallowReadonlyMap, toRaw } from "./reactive";
+import { isRef } from './ref';
 
 // 数组仪表对象（当代理拦截到的是数组，则使用这里）
 const arrayInstrumentations = createArrayInstrumentations();
@@ -105,6 +106,12 @@ function createGetter(isReadonly = false, shallow = false) {
     if (shallow) {
       return result;
     }
+
+    // 如果得到的值是 ref
+    if (isRef(result)) {
+      // 为什么数组内的 ref 值就不自动帮助 .value ？因为用户可能真想从数组内取出 ref，而不是取出 value，为了保证取出的数组值是正确的
+      return targetIsArray && isIntegerKey(key) ? result : result.value;
+    }
     // 如果是对象
     if (isObject(result)) {
       // 是对象，继续深度代理
@@ -122,14 +129,23 @@ function createSetter(shallow = false) {
   return function set(target, key, value, receiver) {
     // 取出旧值
     let oldValue = target[key];
-    // 如果旧值是只读，直接返回false，不修改
-    if (isReadonly(oldValue)) {
+    // 如果旧值是只读，并且还是ref， 但新值不再是ref的情况下，直接返回false，不修改
+    if (isReadonly(oldValue) && isRef(oldValue) && !isRef(value)) {
       return false;
     }
-    // 如果参数不是浅的，而且新值还不是只读，而且新值还是深度代理，则将新旧值都转换为原始值
-    if (!shallow && !isReadonly(value) && !isShallow(value)) {
-      value = toRaw(value);
-      oldValue = toRaw(oldValue);
+    // 如果参数不是浅的，而且新值还不是只读
+    if (!shallow && !isReadonly(value)) {
+      // 如果不是浅代理，则将新旧值都转换为原始值
+      if (!isShallow(value)) {
+        value = toRaw(value)
+        oldValue = toRaw(oldValue)
+      }
+      // 如果代理对象不是数组，并且还是ref， 但新值不再是ref的情况下，则复用ref
+      if (!isArray(target) && isRef(oldValue) && !isRef(value)) {
+        // 这样旧值ref还是原来的ref，只是值变了
+        oldValue.value = value;
+        return true;
+      }
     }
 
     // 取值
