@@ -7,4 +7,5 @@
  */
 
 export { activeEffect, effect, ReactiveEffect } from './effect';
-export { isReadonly, reactive, readonly, toRaw } from './reactive';
+export { isReadonly, reactive, readonly, shallowReactive, shallowReadonly, toRaw } from './reactive';
+

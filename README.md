@@ -60,45 +60,45 @@ Vue的设计理念和架构封装非常有益于自我提升，尤其是Vue3的�
 
 **响应式**
 
-- [x] reactive（未完成）
-- [ ] shallowReactive
-- [ ] readonly
-- [ ] shallowReadonly
-- [x] effect（未完成）
-- [ ] ref
-- [ ] shallowRef
-- [ ] proxyRefs
-- [ ] toRef
-- [ ] computed
-- [ ] effectScope
+- [x] reactive
+- [x] shallowReactive
+- [x] readonly
+- [x] shallowReadonly
+- [x] effect
+- [ ] ref - 待完成
+- [ ] shallowRef - 待完成
+- [ ] proxyRefs - 待完成
+- [ ] toRef - 待完成
+- [ ] computed - 待完成
+- [ ] effectScope - 待完成
 
 **组件渲染**
 
-- [ ] watch
-- [ ] 状态组件渲染
-- [ ] setup统一入口
-- [ ] 函数式组件渲染
-- [ ] 组件生命周期
-- [ ] 异步组件渲染
-- [ ] 靶向更新
-- [ ] v-model指令处理
-- [ ] KeepAlive组件
-- [ ] Teleport组件
-- [ ] inject/provide
-- [ ] 组件注册
-- [ ] 组件挂载
+- [ ] watch - 待完成
+- [ ] 状态组件渲染 - 待完成
+- [ ] setup统一入口 - 待完成
+- [ ] 函数式组件渲染 - 待完成
+- [ ] 组件生命周期 - 待完成
+- [ ] 异步组件渲染 - 待完成
+- [ ] 靶向更新 - 待完成
+- [ ] v-model指令处理 - 待完成
+- [ ] KeepAlive组件 - 待完成
+- [ ] Teleport组件 - 待完成
+- [ ] inject/provide - 待完成
+- [ ] 组件注册 - 待完成
+- [ ] 组件挂载 - 待完成
 
 **模板编译**
 
-- [ ] 模板解析
-- [ ] AST转化
-- [ ] 指令转化
-- [ ] 代码生成
+- [ ] 模板解析 - 待完成
+- [ ] AST转化 - 待完成
+- [ ] 指令转化 - 待完成
+- [ ] 代码生成 - 待完成
 
 **Vue统一入口**
 
-- [ ] 运行时编译注册
-- [ ] 编译到函数
+- [ ] 运行时编译注册 - 待完成
+- [ ] 编译到函数 - 待完成
 
 ## 使用
 

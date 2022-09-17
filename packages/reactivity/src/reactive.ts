@@ -10,7 +10,7 @@
  */
 
 import { isObject } from "@vue/shared";
-import { mutableHandlers, readonlyHandlers } from "./baseHandler";
+import { mutableHandlers, readonlyHandlers, shallowReactiveHandlers, shallowReadonlyHandlers } from "./baseHandler";
 
 // 响应式对象映射表（存放 原对象 和 代理对象的映射关系）
 export const reactiveMap = new WeakMap();
@@ -117,4 +117,26 @@ export function toRaw(observed) {
  */
 export function isShallow(value) {
   return !!(value && value[ReactiveFlags.IS_SHALLOW]);
+}
+
+/**
+ * 浅响应式：将对象变为浅响应式（内部对象不代理）
+ * 
+ * @param target 目标对象
+ * @returns 被转换后的浅响应式对象
+ */
+export function shallowReactive(target) {
+  // 创建浅响应式对象
+  return createReactiveObject(target, shallowReactiveHandlers, shallowReactiveMap);
+}
+
+/**
+ * 浅只读对象：将对象变为浅只读
+ * 
+ * @param target 目标对象
+ * @returns 被转换后的浅只读对象
+ */
+export function shallowReadonly(target) {
+  // 创建浅响应式对象
+  return createReactiveObject(target, shallowReadonlyHandlers, shallowReadonlyMap);
 }

@@ -171,8 +171,12 @@ function deleteProperty(target, key) {
 // get
 const get = createGetter();
 const readonlyGet = createGetter(true);
+const shallowGet = createGetter(false, true);
+const shallowReadonlyGet = createGetter(true, true);
+
 // set
 const set = createSetter();
+const shallowSet = createSetter(true);
 
 // 可变 handlers（reactive使用）
 export const mutableHandlers = {
@@ -193,3 +197,20 @@ export const readonlyHandlers = {
     return true
   }
 };
+
+// 浅响应式 handlers（shallowReactive使用），读取时就算属性是对象，也不会深入递归继续代理
+export const shallowReactiveHandlers = {
+  get: shallowGet,
+  set: shallowSet,
+  deleteProperty
+};
+
+// 浅只读 handlers（shallowReadonly使用），读取时就算属性是对象，也不会深入递归继续代理
+export const shallowReadonlyHandlers = Object.assign(
+  // 将只读 handlers 合并，并覆盖 get
+  {},
+  readonlyHandlers,
+  {
+    get: shallowReadonlyGet
+  }
+);
