@@ -6,10 +6,10 @@
  * Module Name: ref响应式测试
  */
 
-import { effect, ref, shallowRef } from '../../../../reactivity/dist/reactivity.esmodule.js';
+import { effect, reactive, ref, shallowRef, toRefs } from '../../../../reactivity/dist/reactivity.esmodule.js';
 
 export default () => {
-  shallowRefTest();
+  toRefsTest();
 }
 
 // ref测试
@@ -60,4 +60,20 @@ function shallowRefTest() {
   setTimeout(() => {
     f2.value.name = '小刚';
   }, 2000);
+}
+
+// toRefs测试
+function toRefsTest() {
+  const state = reactive({ name: '小明', age: 20 });
+
+  effect(() => {
+    app.innerHTML = `姓名：${state.name}，年龄：${state.age}`
+  });
+
+  const refs = toRefs(state);
+  console.log(refs);
+
+  setTimeout(() => {
+    refs.name.value = '小刚';
+  }, 1000);
 }

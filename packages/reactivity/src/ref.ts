@@ -10,7 +10,7 @@
  *    当传递的参数为对象时，ref也会使用 reactive
  */
 
-import { hasChanged, isObject } from "@vue/shared";
+import { hasChanged, isArray, isObject } from "@vue/shared";
 import { activeEffect, trackEffects, triggerEffects } from "./effect";
 import { reactive, toRaw } from "./reactive";
 
@@ -108,6 +108,54 @@ export function triggerRefValue(ref) {
   if (ref.dep) {
     triggerEffects(ref.dep);
   }
+}
+
+/**
+ * 对象Ref实现类
+ */
+class ObjectRefImpl {
+  public readonly __v_isRef = true;
+  constructor(private _object, private _key) { }
+
+  // 读取value时，依然从源响应式对象取值（会触发依赖收集）
+  get value() {
+    return this._object[this._key];
+  }
+
+  // 设置value时，依然给源响应式对象设置（会触发更新）
+  set value(newValue) {
+    this._object[this._key] = newValue;
+  }
+}
+
+/**
+ * 将对象全部属性转为ref
+ * 如果对象是响应式对象，会转为普通对象，但对象属性全部为ref对象，依旧可以触发响应式
+ * 如果对象是普通对象，虽然属性为ref对象，但不会触发响应式，因为ref属性的取值和写值依旧是对源对象进行操作
+ * @param object 源对象
+ * @returns 转换后的对象
+ */
+export function toRefs(object) {
+  // 如果是数组，则实例化同样大小的空数组，否则为空对象
+  const ret = isArray(object) ? new Array(object.length) : {};
+  for (const key in object) {
+    // 遍历全部属性，将每个属性值都变成 ref 对象
+    ret[key] = toRef(object, key);
+  }
+  return ret;
+}
+
+/**
+ * 将对象某个属性转为ref
+ * @param object 源对象
+ * @param key 属性key
+ * @returns 转换后的对象属性
+ */
+export function toRef(object, key) {
+  // 获取值
+  const value = object[key];
+  // 如果值是 ref 就直接返回，否则返回 ObjectRefImpl 实例
+  return isRef(value) ? value : new ObjectRefImpl(object, key);
 }
 
 /**
