@@ -6,10 +6,10 @@
  * Module Name: ref响应式测试
  */
 
-import { effect, reactive, ref, shallowRef, toRefs } from '../../../../reactivity/dist/reactivity.esmodule.js';
+import { effect, proxyRefs, reactive, ref, shallowRef, toRefs } from '../../../../reactivity/dist/reactivity.esmodule.js';
 
 export default () => {
-  toRefsTest();
+  proxyRefsTest();
 }
 
 // ref测试
@@ -76,4 +76,15 @@ function toRefsTest() {
   setTimeout(() => {
     refs.name.value = '小刚';
   }, 1000);
+}
+
+// 脱refs测试
+function proxyRefsTest() {
+  const state = { name: ref('小明') };
+
+  console.log('name.value: ', state.name.value);
+
+  const unrefState = proxyRefs(state);
+
+  console.log('name: ', unrefState.name);
 }

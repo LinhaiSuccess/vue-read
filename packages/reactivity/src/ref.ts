@@ -12,7 +12,7 @@
 
 import { hasChanged, isArray, isObject } from "@vue/shared";
 import { activeEffect, trackEffects, triggerEffects } from "./effect";
-import { reactive, toRaw } from "./reactive";
+import { isReactive, reactive, toRaw } from "./reactive";
 
 class RefImpl {
   private _value;                     // 内部私有值
@@ -76,8 +76,8 @@ export function ref(value?) {
 
 /**
  * 浅代理 ref 实现
- *    只有 value 修改才会触发视图更新，如果是对象而对象属性修改不会触发视图更新
- *    如果为基本数据类型，和 ref 效果一样
+ *  只有 value 修改才会触发视图更新，如果是对象而对象属性修改不会触发视图更新
+ *  如果为基本数据类型，和 ref 效果一样
  * @param value 要转换为响应式的 基本类型 或 引用类型
  * @returns 转换后的浅 ref 响应式对象
  */
@@ -130,8 +130,8 @@ class ObjectRefImpl {
 
 /**
  * 将对象全部属性转为ref
- * 如果对象是响应式对象，会转为普通对象，但对象属性全部为ref对象，依旧可以触发响应式
- * 如果对象是普通对象，虽然属性为ref对象，但不会触发响应式，因为ref属性的取值和写值依旧是对源对象进行操作
+ *  如果对象是响应式对象，会转为普通对象，但对象属性全部为ref对象，依旧可以触发响应式
+ *  如果对象是普通对象，虽然属性为ref对象，但不会触发响应式，因为ref属性的取值和写值依旧是对源对象进行操作
  * @param object 源对象
  * @returns 转换后的对象
  */
@@ -158,6 +158,35 @@ export function toRef(object, key) {
   return isRef(value) ? value : new ObjectRefImpl(object, key);
 }
 
+// 脱ref代理处理程序
+const shallowUnwrapHandlers = {
+  get(target, key, receiver) {
+    // 如果是 ref 则返回 .value 的值，否则直接返回
+    return unref(Reflect.get(target, key, receiver))
+  },
+  set(target, key, value, receiver) {
+    // 获取旧值
+    const oldValue = target[key];
+    // 如果旧值是 ref，并且新值不是 ref，则直接复用
+    if (isRef(oldValue) && !isRef(value)) {
+      oldValue.value = value;
+      return true;
+    }
+    // 直接给目标对象设置
+    return Reflect.set(target, key, value, receiver);
+  }
+};
+
+/**
+ * 脱 ref 
+ *  模板渲染也会用到，ref 在模板中使用不需要 .value
+ * @param objectWithRefs reactive对象 或 refs
+ * @returns 脱掉 .value 后的对象
+ */
+export function proxyRefs(objectWithRefs) {
+  return isReactive(objectWithRefs) ? objectWithRefs : new Proxy(objectWithRefs, shallowUnwrapHandlers);
+}
+
 /**
  * 转换为 reactive 对象，前提：必须是对象
  * @param value 对象 或 基本类型值
@@ -169,10 +198,19 @@ export function toReactive(value) {
 }
 
 /**
- * 是否 Ref 对象
+ * 是否 ref 对象
  * @param value 值
- * @returns 是否 Ref
+ * @returns 是否 ref
  */
 export function isRef(value) {
   return !!(value && value.__v_isRef);
+}
+
+/**
+ * 脱掉ref
+ * @param ref ref 对象
+ * @returns 值
+ */
+export function unref(ref) {
+  return isRef(ref) ? ref.value : ref;
 }

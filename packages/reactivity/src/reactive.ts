@@ -140,3 +140,17 @@ export function shallowReadonly(target) {
   // 创建浅响应式对象
   return createReactiveObject(target, shallowReadonlyHandlers, shallowReadonlyMap);
 }
+
+/**
+ * 是否响应式对象
+ * 
+ * @param value 要判断的值
+ * @returns 是否响应式对象
+ */
+export function isReactive(value) {
+  if (isReadonly(value)) {
+    // 如果是只读的，则把原始值取出做判断
+    return isReactive(value[ReactiveFlags.RAW]);
+  }
+  return !!(value && value[ReactiveFlags.IS_REACTIVE]);
+}

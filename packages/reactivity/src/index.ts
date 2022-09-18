@@ -8,5 +8,5 @@
 
 export { activeEffect, effect, ReactiveEffect } from './effect';
 export { isReadonly, reactive, readonly, shallowReactive, shallowReadonly, toRaw } from './reactive';
-export { ref, shallowRef, toRefs } from './ref';
+export { proxyRefs, ref, shallowRef, toRefs } from './ref';
 
