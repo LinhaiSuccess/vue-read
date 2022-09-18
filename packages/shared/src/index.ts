@@ -8,9 +8,7 @@
  */
 
 // 是否对象
-export const isObject = value => {
-  return typeof value === 'object' && value !== null;
-}
+export const isObject = value => typeof value === 'object' && value !== null;
 
 // 是否数组
 export const isArray = Array.isArray;
@@ -23,9 +21,7 @@ export const hasOwn = (value, key) => {
 }
 
 // 是否字符串
-export const isString = value => {
-  return typeof value === 'string';
-}
+export const isString = value => typeof value === 'string';
 
 // 是否整数key
 export const isIntegerKey = key => {
@@ -34,4 +30,7 @@ export const isIntegerKey = key => {
 }
 
 // 新值和旧值是否相同
-export const hasChanged = (value, oldValue) => !Object.is(value, oldValue)
+export const hasChanged = (value, oldValue) => !Object.is(value, oldValue);
+
+// 是否函数
+export const isFunction = value => typeof value === 'function';

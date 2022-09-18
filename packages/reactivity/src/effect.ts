@@ -9,7 +9,7 @@
  *    effect 所包装的 fn 函数就是触发更新时所执行的函数，当响应式变量变化后会重新执行diff算法对比组件变化到达模板更新的效果
  */
 
-import { isArray, isIntegerKey } from "@vue/shared";
+import { isArray, isFunction, isIntegerKey } from "@vue/shared";
 
 // 导出当前活动的effect全局变量的引用
 // 为什么敢这么做？是因为JS是单线程的，不需要考虑多个线程并发导致不准的情况
@@ -19,7 +19,7 @@ export class ReactiveEffect {
   public active = true;   // 激活状态，默认激活
   public parent = null;   // 因为 effect 可以嵌套执行，所以这里记载一下自己的父亲是谁
   public deps = [];       // 记录它依赖了哪些属性
-  constructor(public fn) { }
+  constructor(public fn, public scheduler?) { }
 
   run() {
     if (!this.active) {
@@ -49,11 +49,12 @@ export class ReactiveEffect {
  * effect 副作用函数
  *    effect 接收一个fn函数，当 fn 函数内使用到的响应式变量都会被依赖收集
  * @param fn 需要触发的函数
+ * @param options 配置项
  * @returns 返回 run 方法，用户可以手动触发 run 渲染
  */
-export function effect(fn) {
+export function effect(fn, options: any = {}) {
   // 实例化 ReactiveEffect
-  const _effect = new ReactiveEffect(fn);
+  const _effect = new ReactiveEffect(fn, options.scheduler);
   // 默认先执行一次（本次执行后，fn函数内使用的响应式对象都会触发依赖收集）
   _effect.run();
 
@@ -191,8 +192,13 @@ export function triggerEffects(dep) {
   effects.forEach(effect => {
     // 就是防止在 effect 里修改值，来这里触发更新，这里再执行 effect ，里面执行时又修改值，会死循环，所以先过滤掉当前激活的 effect
     if (effect !== activeEffect) {
-      // 执行 run（内部会执行 fn）
-      effect.run();
+      if (isFunction(effect.scheduler)) {
+        // 对象成员变量 scheduler 是个函数，不自动执行 run() 方法，来执行 scheduler，由使用者来决定是否触发更新
+        effect.scheduler();
+      } else {
+        // 执行 run（内部会执行 fn）
+        effect.run();
+      }
     }
   });
 }

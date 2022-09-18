@@ -6,6 +6,7 @@
  * Module Name: 响应式模块
  */
 
+export { computed } from './computed';
 export { activeEffect, effect, ReactiveEffect } from './effect';
 export { isReadonly, reactive, readonly, shallowReactive, shallowReadonly, toRaw } from './reactive';
 export { proxyRefs, ref, shallowRef, toRefs } from './ref';

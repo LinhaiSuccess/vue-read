@@ -67,7 +67,7 @@ Vue的设计理念和架构封装非常有益于自我提升，尤其是Vue3的�
 - [x] shallowRef
 - [x] proxyRefs
 - [x] toRefs
-- [ ] computed - 待完成
+- [x] computed
 - [ ] effectScope - 待完成
 
 **组件渲染**

@@ -6,12 +6,12 @@
  * Module Name: 响应式模块测试入口
 *******************************************************************************/
 
-import ref from './ref.js';
+import computed from './computed.js';
 
 // 执行
 run();
 
 // 运行函数
 function run() {
-  ref();
+  computed();
 }
