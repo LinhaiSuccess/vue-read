@@ -8,6 +8,6 @@
 
 export { computed } from './computed';
 export { activeEffect, effect, ReactiveEffect } from './effect';
+export { effectScope } from './effectScope';
 export { isReadonly, reactive, readonly, shallowReactive, shallowReadonly, toRaw } from './reactive';
 export { proxyRefs, ref, shallowRef, toRefs } from './ref';
-

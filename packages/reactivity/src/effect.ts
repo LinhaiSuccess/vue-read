@@ -10,6 +10,7 @@
  */
 
 import { isArray, isFunction, isIntegerKey } from "@vue/shared";
+import { recordEffectScope } from "./effectScope";
 
 // 导出当前活动的effect全局变量的引用
 // 为什么敢这么做？是因为JS是单线程的，不需要考虑多个线程并发导致不准的情况
@@ -19,7 +20,10 @@ export class ReactiveEffect {
   public active = true;   // 激活状态，默认激活
   public parent = null;   // 因为 effect 可以嵌套执行，所以这里记载一下自己的父亲是谁
   public deps = [];       // 记录它依赖了哪些属性
-  constructor(public fn, public scheduler?) { }
+  constructor(public fn, public scheduler?) {
+    // 当前effect创建时，添加到 effectScope 中
+    recordEffectScope(this);
+  }
 
   run() {
     if (!this.active) {
@@ -41,6 +45,15 @@ export class ReactiveEffect {
       activeEffect = this.parent;
       // 将当前对象父级设置为 undefined
       this.parent = void 0;
+    }
+  }
+
+  stop() {
+    if (this.active) {
+      // 清空全部收集的依赖
+      cleanupEffect(this);
+      // 取消激活
+      this.active = false;
     }
   }
 }

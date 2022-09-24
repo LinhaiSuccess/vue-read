@@ -6,12 +6,12 @@
  * Module Name: 响应式模块测试入口
 *******************************************************************************/
 
-import computed from './computed.js';
+import effectScope from './effectScope.js';
 
 // 执行
 run();
 
 // 运行函数
 function run() {
-  computed();
+  effectScope();
 }
