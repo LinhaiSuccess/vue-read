@@ -4,7 +4,7 @@
   "description": "read the VUE source code",
   "main": "index.js",
   "scripts": {
-    "dev": "node scripts/dev.js reactivity"
+    "dev": "node scripts/dev.js runtime-dom"
   },
   "author": "linhai",
   "license": "ISC",
