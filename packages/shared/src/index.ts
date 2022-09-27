@@ -7,6 +7,9 @@
  * Description: 各模块都需要的公共API
  */
 
+// 导出形状
+export * from './shapeFlags';
+
 // 是否对象
 export const isObject = value => typeof value === 'object' && value !== null;
 
