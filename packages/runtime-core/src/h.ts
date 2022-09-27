@@ -32,6 +32,9 @@ export function h(type, propsChildren?, children?) {
       }
       // 符合这种情况：h('div', { style: { color: 'red' } })
       return createVNode(type, propsChildren);
+    } else {
+      // 否则就是纯文本字符串，符合：h(Text, 'hello')
+      return createVNode(type, null, propsChildren);
     }
   } else {
     if (l > 3) {
