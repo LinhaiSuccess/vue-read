@@ -9,3 +9,6 @@
 export * from '@vue/reactivity';
 export * from '@vue/shared';
 export { traverse, watch } from './apiWatch';
+export { h } from './h';
+export { createRenderer } from './renderer';
+export * from './vnode';

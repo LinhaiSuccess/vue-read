@@ -13,6 +13,9 @@
 
 import { isArray, isObject, isString, ShapeFlags } from '@vue/shared';
 
+// 文本标识
+export const Text = Symbol('Text');
+
 // 创建虚拟节点
 export const createVNode = (type, props = null, children = null) => {
   // 形状
@@ -21,7 +24,6 @@ export const createVNode = (type, props = null, children = null) => {
     isString(type) ? ShapeFlags.ELEMENT :
       // 如果类型是对象，就认为是状态组件
       isObject(type) ? ShapeFlags.STATEFUL_COMPONENT : 0;
-
 
   return createBaseVNode(type, props, children);
 }
@@ -64,5 +66,9 @@ export const createBaseVNode = (type, props = null, children = null, shapeFlag =
  * @returns 是否虚拟节点
  */
 export const isVNode = value => !!(value && value.__v_isVnode);
+
+// 虚拟节点是否相同（类型相同且key相同就认为相同）
+export const isSameVnode = (vnode1, vnode2) => vnode1.type === vnode2.type && vnode1.key === vnode2.key;
+
 // 正常化 key
 const normalizeKey = ({ key }) => key != null ? key : null;
