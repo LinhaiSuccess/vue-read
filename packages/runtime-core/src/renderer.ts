@@ -8,7 +8,7 @@
  */
 
 import { ShapeFlags } from '@vue/shared';
-import { Text } from './vnode';
+import { normalizeVNode, Text } from './vnode';
 
 /**
  * 创建渲染器
@@ -19,9 +19,12 @@ export function createRenderer(renderOptions) {
   // 将渲染操作中的API取出，并重新命名
   const {
     insert: hostInsert,
-    createText: hostCreateText,
     remove: hostRemove,
     setText: hostSetText,
+    createText: hostCreateText,
+    createElement: hostCreateElement,
+    setElementText: hostSetElementText,
+    patchProp: hostPatchProp,
   } = renderOptions;
 
   // 渲染函数
@@ -90,7 +93,36 @@ export function createRenderer(renderOptions) {
 
   // 挂载元素
   const mountElement = (vnode, container, anchor) => {
-    // TODO: 待实现
+    const { type, props, children, shapeFlag } = vnode;
+    // 创建元素，并挂载到 vnode 中
+    const el = vnode.el = hostCreateElement(type);
+    // 添加子元素
+    if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
+      // 设置文本内容
+      hostSetElementText(el, children);
+    } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+      // 递归挂载子节点
+      mountChildren(children, el);
+    }
+    // 添加属性
+    if (props) {
+      for (const key in props) {
+        // 添加属性
+        hostPatchProp(el, key, null, props[key]);
+      }
+    }
+    // 插入到容器元素中
+    hostInsert(el, container, anchor);
+  }
+
+  // 挂载子元素
+  const mountChildren = (children, container) => {
+    for (let i = 0; i < children.length; i++) {
+      // 当前节点可能是字符串，将节点转换为 Text 标识的虚拟节点
+      const child = children[i] = normalizeVNode(children[i])
+      // 递归继续 patch
+      patch(null, child, container, null);
+    }
   }
 
   // 对比更新元素

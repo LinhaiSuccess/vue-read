@@ -37,3 +37,10 @@ export const hasChanged = (value, oldValue) => !Object.is(value, oldValue);
 
 // 是否函数
 export const isFunction = value => typeof value === 'function';
+
+// 是否数值
+export const isNumber = value => typeof value === 'number';
+
+// 是否 on（事件是 on 开头）
+const onRE = /^on[^a-z]/;
+export const isOn = key => onRE.test(key);

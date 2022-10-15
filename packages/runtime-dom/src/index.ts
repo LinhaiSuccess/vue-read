@@ -8,9 +8,10 @@
 
 import { createRenderer } from '@vue/runtime-core';
 import { nodeOps } from './nodeOps';
+import { patchProp } from './patchProp';
 
 // 渲染选项（默认为浏览器DOM操作）
-const renderOptions = nodeOps;
+const renderOptions = Object.assign(nodeOps, { patchProp });;
 // 渲染器
 let renderer;
 

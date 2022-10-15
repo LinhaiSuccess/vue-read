@@ -10,7 +10,7 @@ import { h, render, Text } from '../../../../runtime-dom/dist/runtime-dom.esmodu
 
 export default () => {
   // 渲染测试
-  textRender();
+  elementRender();
 }
 
 // 文本渲染
@@ -21,4 +21,13 @@ function textRender() {
   setTimeout(() => {
     render(h(Text, '你好世界'), app);
   }, 1000);
+}
+
+// 元素渲染
+function elementRender() {
+  render(
+    h('div',
+      { style: { background: 'red' }, onClick: e => console.log('单击事件执行', e) },
+      [h('p', 'p1'), h('p', 'p2')])
+    , app);
 }

@@ -11,10 +11,12 @@
  *    当用户触发了新旧相同的值，或者循环N次对DOM操作也不会浪费性能，因为操作的都是虚拟节点，真正对DOM进行patch时也是一次的
  */
 
-import { isArray, isObject, isString, ShapeFlags } from '@vue/shared';
+import { isArray, isNumber, isObject, isString, ShapeFlags } from '@vue/shared';
 
 // 文本标识
 export const Text = Symbol('Text');
+// Fragment 片段标识（多个虚拟节点将会成为该标识节点的子节点，这也是Vue3根节点可以是多个的原因）
+export const Fragment = Symbol('Fragment');
 
 // 创建虚拟节点
 export const createVNode = (type, props = null, children = null) => {
@@ -58,6 +60,18 @@ export const createBaseVNode = (type, props = null, children = null, shapeFlag =
   }
   // 返回虚拟节点
   return vnode;
+}
+
+// 正常化虚拟节点
+export const normalizeVNode = child => {
+  if (isString(child) || isNumber(child)) {
+    // 是字符串 或 数值，创建 Text 虚拟节点
+    return createVNode(Text, null, String(child));
+  } else if (isArray(child)) {
+    // 是数值，拷贝一份并创建 Fragment
+    return createVNode(Fragment, null, child.slice());
+  }
+  return child;
 }
 
 /**
