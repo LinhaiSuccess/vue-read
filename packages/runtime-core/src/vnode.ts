@@ -27,7 +27,7 @@ export const createVNode = (type, props = null, children = null) => {
       // 如果类型是对象，就认为是状态组件
       isObject(type) ? ShapeFlags.STATEFUL_COMPONENT : 0;
 
-  return createBaseVNode(type, props, children);
+  return createBaseVNode(type, props, children, shapeFlag);
 }
 
 // 创建基本虚拟节点
