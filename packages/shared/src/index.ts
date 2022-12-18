@@ -44,3 +44,10 @@ export const isNumber = value => typeof value === 'number';
 // 是否 on（事件是 on 开头）
 const onRE = /^on[^a-z]/;
 export const isOn = key => onRE.test(key);
+
+// 串联式转驼峰式
+const camelizeReg = /-(\w)/g;
+export const camelize = value => value.replace(camelizeReg, (_, s) => (s ? s.toUpperCase() : ''));
+
+// 添加on前缀关键字
+export const toHandlerKey = value => value ? `on${value[0].toUpperCase() + value.slice(1)}` : '';

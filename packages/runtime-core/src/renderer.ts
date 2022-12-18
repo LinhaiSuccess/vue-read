@@ -7,9 +7,15 @@
  * Description: 组件渲染的核心文件
  */
 
+import { ReactiveEffect } from '@vue/reactivity';
 import { ShapeFlags } from '@vue/shared';
+import { createComponentInstance, setupComponent } from './component';
+import { updateProps } from './componentProps';
+import { renderComponentRoot, shouldUpdateComponent } from './componentRenderUtils';
+import { updateSlots } from './componentSlots';
+import { queueJob } from './scheduler';
 import { getSequence } from './utils/sequence';
-import { isSameVnode, normalizeVNode, Text } from './vnode';
+import { Fragment, isSameVnode, normalizeVNode, Text } from './vnode';
 
 /**
  * 创建渲染器
@@ -57,11 +63,124 @@ export function createRenderer(renderOptions) {
         // 执行文本处理
         processText(oldVnode, newVnode, container);
         break;
+      case Fragment:
+        // 是 Fragment 片段标签，执行片段逻辑处理
+        processFragment(oldVnode, newVnode, container);
+        break;
       default:
         if (shapeFlag & ShapeFlags.ELEMENT) {
           // 执行元素处理
           processElement(oldVnode, newVnode, container, anchor);
+        } else if (shapeFlag & ShapeFlags.COMPONENT) {
+          // 是组件，执行组件处理逻辑
+          processComponent(oldVnode, newVnode, container, anchor);
         }
+    }
+  }
+
+  // 执行组件处理逻辑（统一处理组件 状态组件、函数式组件）
+  const processComponent = (oldVnode, newVnode, container, anchor) => {
+    if (oldVnode == null) {
+      // 旧组件没有，属于第一次渲染，执行组件挂载
+      mountComponent(newVnode, container, anchor);
+    } else {
+      // 更新组件
+      updateComponent(oldVnode, newVnode);
+    }
+  }
+
+  // 挂载组件
+  const mountComponent = (initialVNode, container, anchor) => {
+    // 创建组件实例，将组件实例挂载到虚拟节点中
+    const instance = (initialVNode.component = createComponentInstance(initialVNode, null));
+    // 设置组件实例
+    setupComponent(instance);
+    // 设置渲染 effect
+    setupRenderEffect(instance, initialVNode, container, anchor);
+  }
+
+  // 设置渲染 effect
+  // 组件 初始化/更新 函数
+  const setupRenderEffect = (instance, initialVNode, container, anchor) => {
+    // 组件内部更新
+    const componentUpdateFn = () => {
+      // 如果没有挂载过，则是第一次渲染，就初始化并渲染，否则就是更新
+      if (!instance.isMounted) {
+        // 执行组件内的 render 函数（执行 render 后，里面的响应式对象就会触发代理读取操作）
+        const subTree = renderComponentRoot(instance);
+
+        // 拿到组件内的 vnode 后，执行 patch，将组件内的元素渲染到浏览器
+        patch(null, subTree, container, anchor);
+
+        // 将 subTree 挂载到组件实例
+        instance.subTree = subTree;
+        // 设置挂载标识
+        instance.isMounted = true;
+        // 将根元素赋给组件的el
+        initialVNode.el = subTree.el;
+      } else {
+        // 组件更新
+        // 拿到新vnode
+        const { next, bu, u } = instance;
+        // 更新组件之前渲染
+        next && updateComponentPreRender(instance, next);
+        // 执行组件内的 render 函数（执行 render 后，里面的响应式对象就会触发代理读取操作）
+        const subTree = renderComponentRoot(instance);
+        // 上次保存到组件实例的 subTree 为旧节点，本次为新节点，执行对比
+        patch(instance.subTree, subTree, container, anchor);
+        // 更新 subTree
+        instance.subTree = subTree;
+      }
+    }
+
+    // 本方法既有初始化，又有更新（本次初始化会调用一次 run，数据变了还会调用 run）
+    // 用户可能在方法内更新了好多响应式变量，不能每更新一个就执行一次 run 吧？
+    // 所以我们使用 ReactiveEffect 中的 scheduler ，更新由我们来触发，就是执行 queueJob 方法
+    // queueJob 内来执行 update（实例上的 update 就是 run ）
+    // queueJob 内部会异步更新，放入了微任务中去执行，将用户操作栈中任务一次性消费，而非响应式变量改一次值就重新渲染一次
+    const effect = new ReactiveEffect(componentUpdateFn, () => queueJob(instance.update));
+    // run方法 要保证永远指向 effect
+    // 将 组件强制更新的逻辑（run）保存到组件实例上，后续需要使用
+    const update = instance.update = effect.run.bind(effect);
+    // 第一次执行 
+    update();
+  }
+
+  // 更新组件之前渲染
+  const updateComponentPreRender = (instance, next) => {
+    // 组件实例上的虚拟节点换成新节点
+    instance.vnode = next;
+    // 组件实例上的新节点清空
+    instance.next = null;
+    // 更新属性
+    updateProps(instance.props, next.props);
+    // 更新插槽
+    updateSlots(instance, next.children);
+  }
+
+  // 执行 Fragment 处理
+  const processFragment = (oldVnode, newVnode, container) => {
+    if (oldVnode == null) {
+      // 没有旧节点，挂载新节点孩子
+      newVnode.children && mountChildren(newVnode.children, container);
+    } else {
+      // 更新对比孩子节点（因为两个都是数组，直接diff全量对比）
+      patchChildren(oldVnode, newVnode, container);
+    }
+  }
+
+  // 更新组件
+  const updateComponent = (oldVnode, newVnode) => {
+    // 元素复用我们是复用 el（DOM节点），而组件也需要复用，组件是复用 组件实例，vnode.component 就是该组件的实例
+    // 将旧节点的实例给新节点
+    const instance = (newVnode.component = oldVnode.component);
+
+    // 判断组件是否应该更新 属性、插槽 是否变化
+    if (shouldUpdateComponent(oldVnode, newVnode)) {
+      // 将新节点挂载到 instance.next 属性中
+      instance.next = newVnode;
+      // 调用 update 重新执行组件更新
+      instance.update();
     }
   }
 

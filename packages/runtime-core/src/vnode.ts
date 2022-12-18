@@ -11,7 +11,9 @@
  *    当用户触发了新旧相同的值，或者循环N次对DOM操作也不会浪费性能，因为操作的都是虚拟节点，真正对DOM进行patch时也是一次的
  */
 
-import { isArray, isNumber, isObject, isString, ShapeFlags } from '@vue/shared';
+import { isReactive, isReadonly } from '@vue/reactivity';
+import { isArray, isFunction, isNumber, isObject, isString, ShapeFlags } from '@vue/shared';
+import { normalizeClass, normalizeStyle } from 'packages/shared/src/normalizeProp';
 
 // 文本标识
 export const Text = Symbol('Text');
@@ -20,12 +22,37 @@ export const Fragment = Symbol('Fragment');
 
 // 创建虚拟节点
 export const createVNode = (type, props = null, children = null) => {
+
+  // 存在属性的话，则将 class 和 style 正常化
+  if (props) {
+    if (isReactive(props) || isReadonly(props)) {
+      // 是 reactive 或只读，克隆一份
+      props = Object.assign({}, props);
+      // 取出 class 和 style
+      let { class: klass, style } = props
+      if (klass && !isString(klass)) {
+        // 正常化 class
+        props.class = normalizeClass(klass)
+      }
+      if (isObject(style)) {
+        // 是对象，如果是响应式对象不是数组则克隆一份
+        if ((isReactive(style) || isReadonly(style)) && !isArray(style)) {
+          style = Object.assign({}, style);
+        }
+        // 正常化样式
+        props.style = normalizeStyle(style);
+      }
+    }
+  }
+
   // 形状
   const shapeFlag =
     // 如果类型是文本，就认为是元素
     isString(type) ? ShapeFlags.ELEMENT :
       // 如果类型是对象，就认为是状态组件
-      isObject(type) ? ShapeFlags.STATEFUL_COMPONENT : 0;
+      isObject(type) ? ShapeFlags.STATEFUL_COMPONENT :
+        // 如果类型是 函数，则属于函数组件
+        isFunction(type) ? ShapeFlags.FUNCTIONAL_COMPONENT : 0;
 
   return createBaseVNode(type, props, children, shapeFlag);
 }
@@ -48,9 +75,12 @@ export const createBaseVNode = (type, props = null, children = null, shapeFlag =
     if (isArray(children)) {
       // 子节点是数组，将标识类型改为 array_children
       type = ShapeFlags.ARRAY_CHILDREN;
+    } else if (isObject(children)) {
+      // 子节点是对象，证明是插槽
+      type = ShapeFlags.SLOTS_CHILDREN;
     } else {
-      // 不是数组就是字符串文本
-      // 防止可能是数字，因为 document.createTextNode() 只能放字符串，不能放数字，所以需要转换一下
+      // 是字符串文本
+      // 也可能是数字，因为 document.createTextNode() 只能放字符串，不能放数字，所以需要转换一下
       children = String(children);
       // 将标识类型改为 text_children
       type = ShapeFlags.TEXT_CHILDREN;
