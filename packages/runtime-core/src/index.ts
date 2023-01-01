@@ -8,9 +8,11 @@
 
 export * from '@vue/reactivity';
 export * from '@vue/shared';
+export * from './apiAsyncComponent';
 export * from './apiLifecycle';
 export { traverse, watch } from './apiWatch';
 export { getCurrentInstance } from './component';
 export { h } from './h';
 export { createRenderer } from './renderer';
 export * from './vnode';
+

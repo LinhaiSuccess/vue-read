@@ -205,10 +205,15 @@ export function createRenderer(renderOptions) {
 
   // 卸载
   const unmount = vnode => {
-    const { shapeFlag } = vnode;
+    const { type, shapeFlag } = vnode;
+
+    if (type === Fragment) {
+      // 是 Fragment，卸载子节点
+      return unmountChildren(vnode.children);
+    }
     if (shapeFlag & ShapeFlags.COMPONENT) {
       // 是组件，卸载组件
-      unmountComponent(vnode.component);
+      return unmountComponent(vnode.component);
     }
     // 移除DOM元素
     hostRemove(vnode.el);
@@ -283,9 +288,6 @@ export function createRenderer(renderOptions) {
 
   // 对比更新元素
   const patchElement = (oldVnode, newVnode) => {
-    console.log('newVnode.el', newVnode.el)
-    console.log('oldVnode.el', oldVnode.el)
-
     // 元素复用
     const el = newVnode.el = oldVnode.el;
     // 取出属性
