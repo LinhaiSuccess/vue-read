@@ -32,6 +32,14 @@ export const nodeOps = {
   // 设置元素文本
   setElementText(el, text) {
     el.textContent = text;
+  },
+  // 获取指定节点的下一个兄弟节点
+  nextSibling(node) {
+    return node.nextSibling;
+  },
+  //获取父节点
+  parentNode(node) {
+    return node.parentNode;
   }
 }
 

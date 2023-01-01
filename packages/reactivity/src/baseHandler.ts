@@ -148,14 +148,13 @@ function createSetter(shallow = false) {
       }
     }
 
-    // 取值
+    // 如果源对象是数组而且key还是下标，则判断当前下标是否小于数组的长度（数组越界）
+    // 否则就不是数组，就看取的key是否为对象自身的属性，而不是原型链继承过来的
+    const hadKey = isArray(target) && isIntegerKey(key) ? Number(key) < target.length : hasOwn(target, key);
+    // 设置值
     const result = Reflect.set(target, key, value, receiver);
-
     // 如果 目标对象 和 当前代理对象对应的源对象相等则可能执行视图更新
     if (target === toRaw(receiver)) {
-      // 如果源对象是数组而且key还是下标，则判断当前下标是否小于数组的长度（数组越界）
-      // 否则就不是数组，就看取的key是否为对象自身的属性，而不是原型链继承过来的
-      const hadKey = isArray(target) && isIntegerKey(key) ? Number(key) < target.length : hasOwn(target, key);
       if (!hadKey) {
         // hadKey 为false，就证明是新增，可能是数组新push，也可能是对象新增属性
         trigger(target, 'add', key);

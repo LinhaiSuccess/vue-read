@@ -8,6 +8,8 @@
  */
 
 // 导出形状
+// 导出对比标识
+export * from './patchFlags';
 export * from './shapeFlags';
 
 // 是否对象

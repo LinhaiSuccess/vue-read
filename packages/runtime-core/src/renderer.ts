@@ -8,7 +8,7 @@
  */
 
 import { ReactiveEffect } from '@vue/reactivity';
-import { invokeArrayFns, ShapeFlags } from '@vue/shared';
+import { invokeArrayFns, PatchFlags, ShapeFlags } from '@vue/shared';
 import { createComponentInstance, setupComponent } from './component';
 import { updateProps } from './componentProps';
 import { renderComponentRoot, shouldUpdateComponent } from './componentRenderUtils';
@@ -28,10 +28,12 @@ export function createRenderer(renderOptions) {
     insert: hostInsert,
     remove: hostRemove,
     setText: hostSetText,
-    createText: hostCreateText,
-    createElement: hostCreateElement,
-    setElementText: hostSetElementText,
     patchProp: hostPatchProp,
+    parentNode: hostParentNode,
+    createText: hostCreateText,
+    nextSibling: hostNextSibling,
+    createElement: hostCreateElement,
+    setElementText: hostSetElementText
   } = renderOptions;
 
   // 渲染函数
@@ -40,7 +42,7 @@ export function createRenderer(renderOptions) {
       // 节点为空，自动卸载组件
       if (container._vnode) {
         // 确实有旧节点，卸载删除掉
-        unmount(container._vnode);
+        unmount(container._vnode, null);
       }
     } else {
       // 执行 patch（初始化或更新）
@@ -51,14 +53,16 @@ export function createRenderer(renderOptions) {
   }
 
   // 打补丁（核心函数，包含初始化、更新、diff全量对比）
-  const patch = (oldVnode, newVnode, container, anchor = null) => {
+  const patch = (oldVnode, newVnode, container, anchor = null, parentComponent = null) => {
     if (oldVnode === newVnode) {
       // 两个节点一样，没必要对比，直接返回
       return;
     }
     if (oldVnode && !isSameVnode(oldVnode, newVnode)) {
+      // 旧节点存在，并且还不是相同节点，获取参考元素，否则新节点将会出现在最后
+      anchor = getNextHostNode(oldVnode);
       // 新旧节点不一致，卸载旧节点
-      unmount(oldVnode);
+      unmount(oldVnode, parentComponent);
       // 把旧节点设置为空，旧节点为空则证明第一次挂载
       oldVnode = null;
     }
@@ -72,24 +76,34 @@ export function createRenderer(renderOptions) {
         break;
       case Fragment:
         // 是 Fragment 片段标签，执行片段逻辑处理
-        processFragment(oldVnode, newVnode, container);
+        processFragment(oldVnode, newVnode, container, parentComponent);
         break;
       default:
         if (shapeFlag & ShapeFlags.ELEMENT) {
           // 执行元素处理
-          processElement(oldVnode, newVnode, container, anchor);
+          processElement(oldVnode, newVnode, container, anchor, parentComponent);
         } else if (shapeFlag & ShapeFlags.COMPONENT) {
           // 是组件，执行组件处理逻辑
-          processComponent(oldVnode, newVnode, container, anchor);
+          processComponent(oldVnode, newVnode, container, anchor, parentComponent);
         }
     }
   }
 
+  // 获取下一个节点
+  const getNextHostNode = vnode => {
+    if (vnode.shapeFlag & ShapeFlags.COMPONENT) {
+      // 如果是组件，就继续递归子节点
+      return getNextHostNode(vnode.component.subTree);
+    }
+    // 获取下一个兄弟节点
+    return hostNextSibling((vnode.anchor || vnode.el))
+  }
+
   // 执行组件处理逻辑（统一处理组件 状态组件、函数式组件）
-  const processComponent = (oldVnode, newVnode, container, anchor) => {
+  const processComponent = (oldVnode, newVnode, container, anchor, parentComponent) => {
     if (oldVnode == null) {
       // 旧组件没有，属于第一次渲染，执行组件挂载
-      mountComponent(newVnode, container, anchor);
+      mountComponent(newVnode, container, anchor, parentComponent);
     } else {
       // 更新组件
       updateComponent(oldVnode, newVnode);
@@ -97,9 +111,9 @@ export function createRenderer(renderOptions) {
   }
 
   // 挂载组件
-  const mountComponent = (initialVNode, container, anchor) => {
+  const mountComponent = (initialVNode, container, anchor, parentComponent) => {
     // 创建组件实例，将组件实例挂载到虚拟节点中
-    const instance = (initialVNode.component = createComponentInstance(initialVNode, null));
+    const instance = (initialVNode.component = createComponentInstance(initialVNode, parentComponent));
     // 设置组件实例
     setupComponent(instance);
     // 设置渲染 effect
@@ -120,7 +134,7 @@ export function createRenderer(renderOptions) {
         // 执行组件内的 render 函数（执行 render 后，里面的响应式对象就会触发代理读取操作）
         const subTree = renderComponentRoot(instance);
         // 拿到组件内的 vnode 后，执行 patch，将组件内的元素渲染到浏览器
-        patch(null, subTree, container, anchor);
+        patch(null, subTree, container, anchor, instance);
 
         // 已渲染，调用 onMounted 钩子函数
         m && invokeArrayFns(m);
@@ -143,7 +157,7 @@ export function createRenderer(renderOptions) {
         // 执行组件内的 render 函数（执行 render 后，里面的响应式对象就会触发代理读取操作）
         const subTree = renderComponentRoot(instance);
         // 上次保存到组件实例的 subTree 为旧节点，本次为新节点，执行对比
-        patch(instance.subTree, subTree, container, anchor);
+        patch(instance.subTree, subTree, container, anchor, instance);
         // 更新 subTree
         instance.subTree = subTree;
 
@@ -178,13 +192,13 @@ export function createRenderer(renderOptions) {
   }
 
   // 执行 Fragment 处理
-  const processFragment = (oldVnode, newVnode, container) => {
+  const processFragment = (oldVnode, newVnode, container, parentComponent) => {
     if (oldVnode == null) {
       // 没有旧节点，挂载新节点孩子
-      newVnode.children && mountChildren(newVnode.children, container);
+      newVnode.children && mountChildren(newVnode.children, container, parentComponent);
     } else {
       // 更新对比孩子节点（因为两个都是数组，直接diff全量对比）
-      patchChildren(oldVnode, newVnode, container);
+      patchChildren(oldVnode, newVnode, container, parentComponent);
     }
   }
 
@@ -204,29 +218,29 @@ export function createRenderer(renderOptions) {
   }
 
   // 卸载
-  const unmount = vnode => {
+  const unmount = (vnode, parentComponent) => {
     const { type, shapeFlag } = vnode;
 
     if (type === Fragment) {
       // 是 Fragment，卸载子节点
-      return unmountChildren(vnode.children);
+      return unmountChildren(vnode.children, parentComponent);
     }
     if (shapeFlag & ShapeFlags.COMPONENT) {
       // 是组件，卸载组件
-      return unmountComponent(vnode.component);
+      return unmountComponent(vnode.component, parentComponent);
     }
     // 移除DOM元素
     hostRemove(vnode.el);
   }
 
   // 卸载组件
-  const unmountComponent = instance => {
+  const unmountComponent = (instance, parentComponent) => {
     const { bum, update, subTree, um } = instance;
 
     // 销毁前调用 onBeforeUnmount 钩子函数
     bum && invokeArrayFns(bum);
     // 卸载子组件
-    update && unmount(subTree);
+    update && unmount(subTree, parentComponent);
     // 销毁后，调用 onUnmounted 钩子函数
     um && invokeArrayFns(um);
   }
@@ -247,13 +261,13 @@ export function createRenderer(renderOptions) {
   }
 
   // 元素处理
-  const processElement = (oldVnode, newVnode, container, anchor) => {
+  const processElement = (oldVnode, newVnode, container, anchor, parentComponent) => {
     // 旧节点为空则初次挂载元素，否则就对比更新元素
-    oldVnode == null ? mountElement(newVnode, container, anchor) : patchElement(oldVnode, newVnode);
+    oldVnode == null ? mountElement(newVnode, container, anchor, parentComponent) : patchElement(oldVnode, newVnode, parentComponent);
   }
 
   // 挂载元素
-  const mountElement = (vnode, container, anchor) => {
+  const mountElement = (vnode, container, anchor, parentComponent) => {
     const { type, props, children, shapeFlag } = vnode;
     // 创建元素，并挂载到 vnode 中
     const el = vnode.el = hostCreateElement(type);
@@ -263,7 +277,7 @@ export function createRenderer(renderOptions) {
       hostSetElementText(el, children);
     } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
       // 递归挂载子节点
-      mountChildren(children, el);
+      mountChildren(children, el, parentComponent);
     }
     // 添加属性
     if (props) {
@@ -273,30 +287,96 @@ export function createRenderer(renderOptions) {
       }
     }
     // 插入到容器元素中
-    hostInsert(el, container, anchor);
+    hostInsert(el, container ? container : parentComponent, anchor);
   }
 
   // 挂载子元素
-  const mountChildren = (children, container) => {
+  const mountChildren = (children, container, parentComponent) => {
     for (let i = 0; i < children.length; i++) {
       // 当前节点可能是字符串，将节点转换为 Text 标识的虚拟节点
       const child = children[i] = normalizeVNode(children[i])
       // 递归继续 patch
-      patch(null, child, container, null);
+      patch(null, child, container, null, parentComponent);
     }
   }
 
   // 对比更新元素
-  const patchElement = (oldVnode, newVnode) => {
+  const patchElement = (oldVnode, newVnode, parentComponent) => {
+    let { patchFlag, dynamicChildren } = newVnode;
     // 元素复用
-    const el = newVnode.el = oldVnode.el;
+    let el = newVnode.el = oldVnode.el;
+    if (el == null) {
+      el = parentComponent.ctx.$el;
+    }
+
     // 取出属性
     const oldProps = oldVnode.props || {};
     const newProps = newVnode.props || {};
-    // 属性对比
-    patchProps(oldProps, newProps, el);
-    // diff比较子元素
-    patchChildren(oldVnode, newVnode, el);
+    patchFlag |= oldVnode.patchFlag & PatchFlags.FULL_PROPS;
+
+    // 如果大于0则代表是动态节点
+    if (patchFlag > 0) {
+      if (patchFlag & PatchFlags.FULL_PROPS) {
+        // 有key，属性全部对比
+        patchProps(oldProps, newProps, el);
+      } else {
+        if (patchFlag & PatchFlags.CLASS) {
+          // class 发生变化
+          oldProps.class !== newProps.class && hostPatchProp(el, 'class', null, newProps.class);
+        }
+        if (patchFlag & PatchFlags.STYLE) {
+          // 样式 发生变化
+          hostPatchProp(el, 'style', oldProps.style, newProps.style);
+        }
+        if (patchFlag & PatchFlags.PROPS) {
+          // 动态 属性(除class/style) 变化
+          const propsToUpdate = newVnode.dynamicProps;
+          // 遍历动态属性
+          for (let i = 0; i < propsToUpdate.length; i++) {
+            const key = propsToUpdate[i];
+            const prev = oldProps[key];
+            const next = newProps[key];
+            if (next !== prev || key === 'value') {
+              // 当新属性和旧属性不相等时，或者 key 为 value 时，更新属性
+              hostPatchProp(el, key, prev, next);
+            }
+          }
+        }
+      }
+
+      if (patchFlag & PatchFlags.TEXT) {
+        // 是文本，更新文本
+        oldVnode.children !== newVnode.children && hostSetElementText(el, newVnode.children);
+      }
+    } else if (dynamicChildren === null) {
+      // 全量属性对比
+      patchProps(oldProps, newProps, el);
+    }
+
+    // 若是有动态子节点，则只需对比动态子节点即可，否则对比孩子
+    newVnode.dynamicChildren ? patchBlockChildren(oldVnode, newVnode, el, parentComponent) : patchChildren(oldVnode, newVnode, el, parentComponent);
+  }
+
+  // 对比动态子节点
+  const patchBlockChildren = (oldVnode, newVnode, el, parentComponent) => {
+    const len = newVnode.dynamicChildren.length;
+    // 循环动态节点
+    for (let i = 0; i < len; i++) {
+      // 对比元素
+      const oldChild = oldVnode.dynamicChildren[i];
+      const newChild = newVnode.dynamicChildren[i];
+
+      if (isSameVnode(oldChild, newChild)) {
+        // 相同节点，直接更新
+        // 靶向更新的好处就是不需要递归比较，直接单层数组比较即可，就算嵌套3层，爷孙节点变化，这里也是平级处理
+        patchElement(oldChild, newChild, parentComponent);
+      } else {
+        const isParent = oldChild.type === Fragment || !isSameVnode(oldChild, newChild) || oldChild.shapeFlag & ShapeFlags.COMPONENT;
+        // 对比
+        const container = oldChild.el && isParent ? hostParentNode(oldChild.el) : el;
+        patch(oldChild, newChild, container);
+      }
+    }
   }
 
   // 属性更新
@@ -317,12 +397,12 @@ export function createRenderer(renderOptions) {
   }
 
   // 卸载子节点
-  const unmountChildren = (children) => {
-    children && children.forEach(unmount);
+  const unmountChildren = (children, parentComponent) => {
+    children && children.forEach(child => unmount(child, parentComponent));
   }
 
   // diff比较子元素
-  const patchChildren = (oldVnode, newVnode, el) => {
+  const patchChildren = (oldVnode, newVnode, el, parentComponent) => {
     // 取出子节点
     const oldChild = oldVnode.children;
     const newChild = newVnode.children;
@@ -333,7 +413,7 @@ export function createRenderer(renderOptions) {
     if (newFlag & ShapeFlags.TEXT_CHILDREN) {
       if (oldFlag & ShapeFlags.ARRAY_CHILDREN) {
         // 新孩子=文本 旧孩子=数组：卸载旧孩子
-        unmountChildren(oldChild);
+        unmountChildren(oldChild, parentComponent);
       }
       if (oldChild !== newChild) {
         // 新孩子=文本 旧孩子=文本：更新文本
@@ -350,11 +430,11 @@ export function createRenderer(renderOptions) {
             newChild[i] = normalizeVNode(newChild[i]);
           }
           // diff全量对比
-          patchKeyedChildren(oldChild, newChild, el);
+          patchKeyedChildren(oldChild, newChild, el, parentComponent);
         } else {
           // 新孩子不是数组，到了这里，就只有为空的可能
           // 将旧孩子卸载掉
-          unmountChildren(oldChild);
+          unmountChildren(oldChild, parentComponent);
         }
       } else {
         if (oldFlag & ShapeFlags.TEXT_CHILDREN) {
@@ -364,14 +444,14 @@ export function createRenderer(renderOptions) {
         }
         if (newFlag & ShapeFlags.ARRAY_CHILDREN) {
           // 进行挂载
-          mountChildren(newChild, el);
+          mountChildren(newChild, el, parentComponent);
         }
       }
     }
   }
 
   // diff全量对比
-  const patchKeyedChildren = (oldChild, newChild, el) => {
+  const patchKeyedChildren = (oldChild, newChild, el, parentComponent) => {
     // 从左边开始对比，新节点数组和旧节点数组有任何一方到头则停止循环
     let i = 0;
     // 两个节点的索引长度
@@ -428,7 +508,7 @@ export function createRenderer(renderOptions) {
       if (i <= e1) {
         while (i <= e1) {
           // 卸载节点
-          unmount(oldChild[i]);
+          unmount(oldChild[i], parentComponent);
           i++;
         }
       }
@@ -460,7 +540,7 @@ export function createRenderer(renderOptions) {
       const newIndex = keyToNewIndexMap.get(oldVNode.key);
       if (newIndex == null) {
         // 新节点映射表中没有找到相同key的节点，证明新节点没有这个，那么就把当前旧节点卸载掉
-        unmount(oldVNode);
+        unmount(oldVNode, parentComponent);
       } else {
         // 对比前，将当前节点记录一下，证明已经比对过了
         // 通过 newIndex - s2 算出在乱序中的索引
