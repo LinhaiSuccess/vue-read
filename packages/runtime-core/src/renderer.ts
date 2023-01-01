@@ -8,7 +8,7 @@
  */
 
 import { ReactiveEffect } from '@vue/reactivity';
-import { ShapeFlags } from '@vue/shared';
+import { invokeArrayFns, ShapeFlags } from '@vue/shared';
 import { createComponentInstance, setupComponent } from './component';
 import { updateProps } from './componentProps';
 import { renderComponentRoot, shouldUpdateComponent } from './componentRenderUtils';
@@ -56,6 +56,13 @@ export function createRenderer(renderOptions) {
       // 两个节点一样，没必要对比，直接返回
       return;
     }
+    if (oldVnode && !isSameVnode(oldVnode, newVnode)) {
+      // 新旧节点不一致，卸载旧节点
+      unmount(oldVnode);
+      // 把旧节点设置为空，旧节点为空则证明第一次挂载
+      oldVnode = null;
+    }
+
     const { type, shapeFlag } = newVnode;
     // 根据不同形状执行不同逻辑
     switch (type) {
@@ -106,11 +113,17 @@ export function createRenderer(renderOptions) {
     const componentUpdateFn = () => {
       // 如果没有挂载过，则是第一次渲染，就初始化并渲染，否则就是更新
       if (!instance.isMounted) {
+        // 第一次渲染，执行 onBeforeMount 钩子函数
+        const { bm, m } = instance;
+        bm && invokeArrayFns(bm);
+
         // 执行组件内的 render 函数（执行 render 后，里面的响应式对象就会触发代理读取操作）
         const subTree = renderComponentRoot(instance);
-
         // 拿到组件内的 vnode 后，执行 patch，将组件内的元素渲染到浏览器
         patch(null, subTree, container, anchor);
+
+        // 已渲染，调用 onMounted 钩子函数
+        m && invokeArrayFns(m);
 
         // 将 subTree 挂载到组件实例
         instance.subTree = subTree;
@@ -120,8 +133,11 @@ export function createRenderer(renderOptions) {
         initialVNode.el = subTree.el;
       } else {
         // 组件更新
-        // 拿到新vnode
         const { next, bu, u } = instance;
+
+        // 更新之前，调用 onBeforeUpdate 钩子函数
+        bu && invokeArrayFns(bu);
+
         // 更新组件之前渲染
         next && updateComponentPreRender(instance, next);
         // 执行组件内的 render 函数（执行 render 后，里面的响应式对象就会触发代理读取操作）
@@ -130,6 +146,9 @@ export function createRenderer(renderOptions) {
         patch(instance.subTree, subTree, container, anchor);
         // 更新 subTree
         instance.subTree = subTree;
+
+        // 更新后，调用 onUpdated 钩子
+        u && invokeArrayFns(u);
       }
     }
 
@@ -186,8 +205,25 @@ export function createRenderer(renderOptions) {
 
   // 卸载
   const unmount = vnode => {
+    const { shapeFlag } = vnode;
+    if (shapeFlag & ShapeFlags.COMPONENT) {
+      // 是组件，卸载组件
+      unmountComponent(vnode.component);
+    }
     // 移除DOM元素
     hostRemove(vnode.el);
+  }
+
+  // 卸载组件
+  const unmountComponent = instance => {
+    const { bum, update, subTree, um } = instance;
+
+    // 销毁前调用 onBeforeUnmount 钩子函数
+    bum && invokeArrayFns(bum);
+    // 卸载子组件
+    update && unmount(subTree);
+    // 销毁后，调用 onUnmounted 钩子函数
+    um && invokeArrayFns(um);
   }
 
   // 文本处理
@@ -247,6 +283,9 @@ export function createRenderer(renderOptions) {
 
   // 对比更新元素
   const patchElement = (oldVnode, newVnode) => {
+    console.log('newVnode.el', newVnode.el)
+    console.log('oldVnode.el', oldVnode.el)
+
     // 元素复用
     const el = newVnode.el = oldVnode.el;
     // 取出属性

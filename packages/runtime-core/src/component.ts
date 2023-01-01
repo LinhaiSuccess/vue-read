@@ -154,3 +154,13 @@ export const setCurrentInstance = instance => currentInstance = instance;
 
 // 获取当前组件实例
 export const getCurrentInstance = () => currentInstance;
+
+// 生命周期钩子枚举
+export const enum LifecycleHooks {
+  BEFORE_MOUNT = 'bm',
+  MOUNTED = 'm',
+  BEFORE_UPDATE = 'bu',
+  UPDATED = 'u',
+  BEFORE_UNMOUNT = 'bum',
+  UNMOUNTED = 'um'
+}

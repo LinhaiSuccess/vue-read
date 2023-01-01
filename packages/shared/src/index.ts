@@ -51,3 +51,10 @@ export const camelize = value => value.replace(camelizeReg, (_, s) => (s ? s.toU
 
 // 添加on前缀关键字
 export const toHandlerKey = value => value ? `on${value[0].toUpperCase() + value.slice(1)}` : '';
+
+// 调用数组内的函数
+export const invokeArrayFns = (fns, arg?) => {
+  for (let i = 0; i < fns.length; i++) {
+    fns[i](arg);
+  }
+}

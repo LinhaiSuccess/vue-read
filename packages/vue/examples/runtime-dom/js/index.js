@@ -6,7 +6,7 @@
  * Module Name: 组件渲染测试入口
 *******************************************************************************/
 
-import run from './componentRender.js';
+import run from './lifecycle.js';
 
 // 运行
 run();
