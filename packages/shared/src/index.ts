@@ -54,6 +54,10 @@ export const camelize = value => value.replace(camelizeReg, (_, s) => (s ? s.toU
 // 添加on前缀关键字
 export const toHandlerKey = value => value ? `on${value[0].toUpperCase() + value.slice(1)}` : '';
 
+// - 字符连接，toUser-login -> to-user-login
+const hyphenateReg = /\B([A-Z])/g;
+export const hyphenate = value => value.replace(hyphenateReg, "-$1").toLowerCase();
+
 // 调用数组内的函数
 export const invokeArrayFns = (fns, arg?) => {
   for (let i = 0; i < fns.length; i++) {

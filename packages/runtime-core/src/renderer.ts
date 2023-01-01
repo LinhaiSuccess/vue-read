@@ -13,9 +13,11 @@ import { createComponentInstance, setupComponent } from './component';
 import { updateProps } from './componentProps';
 import { renderComponentRoot, shouldUpdateComponent } from './componentRenderUtils';
 import { updateSlots } from './componentSlots';
-import { queueJob } from './scheduler';
+import { invokeDirectiveHook } from './directives';
+import { flushPostFlushCbs, queueJob, queuePostFlushCb } from './scheduler';
 import { getSequence } from './utils/sequence';
 import { Fragment, isSameVnode, normalizeVNode, Text } from './vnode';
+
 
 /**
  * 创建渲染器
@@ -48,6 +50,8 @@ export function createRenderer(renderOptions) {
       // 执行 patch（初始化或更新）
       patch(container._vnode || null, vnode, container);
     }
+    // 清洗收集的回调， 有 v-model 指令初始回显
+    flushPostFlushCbs();
     // 将当前 vnode 保存到元素对象中
     container._vnode = vnode;
   }
@@ -268,7 +272,7 @@ export function createRenderer(renderOptions) {
 
   // 挂载元素
   const mountElement = (vnode, container, anchor, parentComponent) => {
-    const { type, props, children, shapeFlag } = vnode;
+    const { type, props, children, shapeFlag, dirs } = vnode;
     // 创建元素，并挂载到 vnode 中
     const el = vnode.el = hostCreateElement(type);
     // 添加子元素
@@ -279,6 +283,11 @@ export function createRenderer(renderOptions) {
       // 递归挂载子节点
       mountChildren(children, el, parentComponent);
     }
+
+    // v-model 给组件添加 input 事件
+    if (dirs) {
+      invokeDirectiveHook(vnode, null, 'created')
+    }
     // 添加属性
     if (props) {
       for (const key in props) {
@@ -288,6 +297,12 @@ export function createRenderer(renderOptions) {
     }
     // 插入到容器元素中
     hostInsert(el, container ? container : parentComponent, anchor);
+
+    // v-model 将绑定数据显示到组件
+    // 当前函数已加入到异步队列，会在 render 函数结束时触发执行
+    if (dirs) {
+      queuePostFlushCb(() => dirs && invokeDirectiveHook(vnode, null, 'mounted'));
+    }
   }
 
   // 挂载子元素
@@ -302,7 +317,7 @@ export function createRenderer(renderOptions) {
 
   // 对比更新元素
   const patchElement = (oldVnode, newVnode, parentComponent) => {
-    let { patchFlag, dynamicChildren } = newVnode;
+    let { patchFlag, dynamicChildren, dirs } = newVnode;
     // 元素复用
     let el = newVnode.el = oldVnode.el;
     if (el == null) {
@@ -313,6 +328,11 @@ export function createRenderer(renderOptions) {
     const oldProps = oldVnode.props || {};
     const newProps = newVnode.props || {};
     patchFlag |= oldVnode.patchFlag & PatchFlags.FULL_PROPS;
+
+    // v-model 数据改变后给组件设置值
+    if (dirs) {
+      invokeDirectiveHook(newVnode, oldVnode, 'beforeUpdate');
+    }
 
     // 如果大于0则代表是动态节点
     if (patchFlag > 0) {

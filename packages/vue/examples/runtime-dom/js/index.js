@@ -6,7 +6,7 @@
  * Module Name: 组件渲染测试入口
 *******************************************************************************/
 
-import run from './blockRender.js';
+import run from './vmodelDirective.js';
 
 // 运行
 run();

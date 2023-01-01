@@ -28,3 +28,5 @@ export const render = (vnode, container) => {
 
 // 导出运行时核心全部API
 export * from '@vue/runtime-core';
+export { vModelText } from './directives/vModel';
+
