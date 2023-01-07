@@ -81,8 +81,8 @@ Vue的设计理念和架构封装非常有益于自我提升，尤其是Vue3的�
 - [x] 异步组件渲染
 - [x] 靶向更新
 - [x] v-model指令处理
-- [ ] KeepAlive组件 - 进展中
-- [ ] Teleport组件 - 待完成
+- [x] KeepAlive组件
+- [ ] Teleport组件 - 进展中
 - [ ] inject/provide - 待完成
 - [ ] 组件注册 - 待完成
 - [ ] 组件挂载 - 待完成

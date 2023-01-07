@@ -12,10 +12,10 @@ export * from './apiAsyncComponent';
 export * from './apiLifecycle';
 export { traverse, watch } from './apiWatch';
 export { getCurrentInstance } from './component';
+export { KeepAlive } from './components/KeepAlive';
 export { invokeDirectiveHook, withDirectives } from './directives';
 export { h } from './h';
 export { renderList } from './helpers/renderList';
 export { renderSlot } from './helpers/renderSlot';
 export { createRenderer } from './renderer';
 export * from './vnode';
-

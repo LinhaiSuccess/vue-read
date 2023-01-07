@@ -12,6 +12,7 @@ import { invokeArrayFns, PatchFlags, ShapeFlags } from '@vue/shared';
 import { createComponentInstance, setupComponent } from './component';
 import { updateProps } from './componentProps';
 import { renderComponentRoot, shouldUpdateComponent } from './componentRenderUtils';
+import { isKeepAlive } from './components/KeepAlive';
 import { updateSlots } from './componentSlots';
 import { invokeDirectiveHook } from './directives';
 import { flushPostFlushCbs, queueJob, queuePostFlushCb } from './scheduler';
@@ -93,6 +94,27 @@ export function createRenderer(renderOptions) {
     }
   }
 
+  // 移动元素
+  const move = (vnode, container, anchor) => {
+    const { el, type, children, shapeFlag } = vnode;
+    if (shapeFlag & ShapeFlags.COMPONENT) {
+      // 是组件，将子组件重新递归过来
+      move(vnode.component.subTree, container, anchor);
+      return;
+    }
+    if (type === Fragment) {
+      // 是 Fragment，将当前节点移动走
+      hostInsert(el, container, anchor);
+      // 遍历子节点，全部走节点也移动了
+      for (let i = 0; i < children.length; i++) {
+        move(children[i], container, anchor);
+      }
+      return;
+    }
+    // 移动
+    hostInsert(el, container, anchor);
+  }
+
   // 获取下一个节点
   const getNextHostNode = vnode => {
     if (vnode.shapeFlag & ShapeFlags.COMPONENT) {
@@ -106,8 +128,13 @@ export function createRenderer(renderOptions) {
   // 执行组件处理逻辑（统一处理组件 状态组件、函数式组件）
   const processComponent = (oldVnode, newVnode, container, anchor, parentComponent) => {
     if (oldVnode == null) {
-      // 旧组件没有，属于第一次渲染，执行组件挂载
-      mountComponent(newVnode, container, anchor, parentComponent);
+      if (newVnode.shapeFlag & ShapeFlags.COMPONENT_KEPT_ALIVE) {
+        // 组件是 KeepAlive 不能直接挂载，调用父组件内的激活方法
+        parentComponent.ctx.activate(newVnode, container, anchor);
+      } else {
+        // 旧组件没有，属于第一次渲染，执行组件挂载
+        mountComponent(newVnode, container, anchor, parentComponent);
+      }
     } else {
       // 更新组件
       updateComponent(oldVnode, newVnode);
@@ -118,6 +145,11 @@ export function createRenderer(renderOptions) {
   const mountComponent = (initialVNode, container, anchor, parentComponent) => {
     // 创建组件实例，将组件实例挂载到虚拟节点中
     const instance = (initialVNode.component = createComponentInstance(initialVNode, parentComponent));
+
+    // 如果是 KeepAlive 组件则给上下文添加渲染属性，告诉 KeepAlive 组件怎么去渲染
+    if (isKeepAlive(initialVNode)) {
+      (instance.ctx as any).renderer = internals;
+    }
     // 设置组件实例
     setupComponent(instance);
     // 设置渲染 effect
@@ -140,24 +172,24 @@ export function createRenderer(renderOptions) {
         // 拿到组件内的 vnode 后，执行 patch，将组件内的元素渲染到浏览器
         patch(null, subTree, container, anchor, instance);
 
-        // 已渲染，调用 onMounted 钩子函数
-        m && invokeArrayFns(m);
-
         // 将 subTree 挂载到组件实例
         instance.subTree = subTree;
         // 设置挂载标识
         instance.isMounted = true;
         // 将根元素赋给组件的el
         initialVNode.el = subTree.el;
+
+        // 已渲染，调用 onMounted 钩子函数
+        m && invokeArrayFns(m);
       } else {
         // 组件更新
         const { next, bu, u } = instance;
 
+        // 更新组件之前渲染
+        next && updateComponentPreRender(instance, next);
         // 更新之前，调用 onBeforeUpdate 钩子函数
         bu && invokeArrayFns(bu);
 
-        // 更新组件之前渲染
-        next && updateComponentPreRender(instance, next);
         // 执行组件内的 render 函数（执行 render 后，里面的响应式对象就会触发代理读取操作）
         const subTree = renderComponentRoot(instance);
         // 上次保存到组件实例的 subTree 为旧节点，本次为新节点，执行对比
@@ -224,6 +256,12 @@ export function createRenderer(renderOptions) {
   // 卸载
   const unmount = (vnode, parentComponent) => {
     const { type, shapeFlag } = vnode;
+
+    // 如果是 KeepAlive 组件则不卸载，而是调用上下文组件内的 deactivate 函数将组件移动到内存中 
+    if (shapeFlag & ShapeFlags.COMPONENT_SHOULD_KEEP_ALIVE) {
+      parentComponent.ctx.deactivate(vnode);
+      return;
+    }
 
     if (type === Fragment) {
       // 是 Fragment，卸载子节点
@@ -609,6 +647,16 @@ export function createRenderer(renderOptions) {
         }
       }
     }
+  }
+
+  // 内部结构
+  const internals = {
+    move,
+    patch,
+    unmount,
+    mountChildren,
+    patchChildren,
+    renderOptions
   }
 
   return {
