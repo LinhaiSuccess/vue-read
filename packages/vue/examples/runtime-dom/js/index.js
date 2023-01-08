@@ -6,7 +6,7 @@
  * Module Name: 组件渲染测试入口
 *******************************************************************************/
 
-import run from './keepAliveRender.js';
+import run from './teleportRender.js';
 
 // 运行
 run();

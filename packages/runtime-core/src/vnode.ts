@@ -14,6 +14,7 @@
 import { isReactive, isReadonly } from '@vue/reactivity';
 import { isArray, isFunction, isNumber, isObject, isString, ShapeFlags } from '@vue/shared';
 import { normalizeClass, normalizeStyle } from 'packages/shared/src/normalizeProp';
+import { isTeleport } from './components/Teleport';
 
 // 文本标识
 export const Text = Symbol('Text');
@@ -48,10 +49,12 @@ export const createVNode = (type, props = null, children = null, patchFlag = 0, 
   const shapeFlag =
     // 如果类型是文本，就认为是元素
     isString(type) ? ShapeFlags.ELEMENT :
-      // 如果类型是对象，就认为是状态组件
-      isObject(type) ? ShapeFlags.STATEFUL_COMPONENT :
-        // 如果类型是 函数，则属于函数组件
-        isFunction(type) ? ShapeFlags.FUNCTIONAL_COMPONENT : 0;
+      // 如果类型是 Teleport，就认为是传送门
+      isTeleport(type) ? ShapeFlags.TELEPORT :
+        // 如果类型是对象，就认为是状态组件
+        isObject(type) ? ShapeFlags.STATEFUL_COMPONENT :
+          // 如果类型是 函数，则属于函数组件
+          isFunction(type) ? ShapeFlags.FUNCTIONAL_COMPONENT : 0;
 
   return createBaseVNode(type, props, children, patchFlag, dynamicProps, shapeFlag, isBlockNode);
 }

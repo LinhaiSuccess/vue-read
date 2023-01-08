@@ -90,6 +90,9 @@ export function createRenderer(renderOptions) {
         } else if (shapeFlag & ShapeFlags.COMPONENT) {
           // 是组件，执行组件处理逻辑
           processComponent(oldVnode, newVnode, container, anchor, parentComponent);
+        } else if (shapeFlag & ShapeFlags.TELEPORT) {
+          // 是传送门，交给传送门自己去处理
+          type.process(oldVnode, newVnode, container, internals);
         }
     }
   }
