@@ -34,6 +34,8 @@ export const createComponentInstance = (vnode, parent) => {
     setupState: {},                     // setup 的返回值
     emit: () => { },                    // emit事件函数
     slots: {},                          // 插槽
+    // 父子组件通信提供对象
+    provides: parent ? parent.provides : Object.create(null)
   };
   // 添加组件实例上下文（创建新代理对象给当前上下文）
   instance.ctx = createRenderContext(instance);

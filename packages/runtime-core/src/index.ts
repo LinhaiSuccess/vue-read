@@ -9,6 +9,7 @@
 export * from '@vue/reactivity';
 export * from '@vue/shared';
 export * from './apiAsyncComponent';
+export * from './apiInject';
 export * from './apiLifecycle';
 export { traverse, watch } from './apiWatch';
 export { getCurrentInstance } from './component';

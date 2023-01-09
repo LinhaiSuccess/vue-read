@@ -83,8 +83,8 @@ Vue的设计理念和架构封装非常有益于自我提升，尤其是Vue3的�
 - [x] v-model指令处理
 - [x] KeepAlive组件
 - [x] Teleport组件
-- [ ] inject/provide - 进展中
-- [ ] 组件注册 - 待完成
+- [x] inject/provide
+- [ ] 组件注册 - 进展中
 - [ ] 组件挂载 - 待完成
 
 **模板编译**
