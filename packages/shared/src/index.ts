@@ -64,3 +64,6 @@ export const invokeArrayFns = (fns, arg?) => {
     fns[i](arg);
   }
 }
+
+// 首字母转大写
+export const capitalize = value => value.charAt(0).toUpperCase() + value.slice(1);

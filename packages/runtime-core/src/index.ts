@@ -19,5 +19,6 @@ export { invokeDirectiveHook, withDirectives } from './directives';
 export { h } from './h';
 export { renderList } from './helpers/renderList';
 export { renderSlot } from './helpers/renderSlot';
+export { resolveAsset, resolveComponent } from './helpers/resolveAssets';
 export { createRenderer } from './renderer';
 export * from './vnode';
