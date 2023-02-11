@@ -9,6 +9,7 @@
 
 import { ReactiveEffect } from '@vue/reactivity';
 import { invokeArrayFns, PatchFlags, ShapeFlags } from '@vue/shared';
+import { createAppAPI } from './apiCreateApp';
 import { createComponentInstance, setupComponent } from './component';
 import { updateProps } from './componentProps';
 import { renderComponentRoot, shouldUpdateComponent } from './componentRenderUtils';
@@ -663,6 +664,7 @@ export function createRenderer(renderOptions) {
   }
 
   return {
-    render
+    render,
+    createApp: createAppAPI(render)
   }
 }
