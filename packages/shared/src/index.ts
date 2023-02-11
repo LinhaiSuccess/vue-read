@@ -7,10 +7,16 @@
  * Description: 各模块都需要的公共API
  */
 
-// 导出形状
+import { makeMap } from './makeMap';
+
+// 导出元素标签配置
+export * from './domTagConfig';
 // 导出对比标识
 export * from './patchFlags';
+// 导出形状
 export * from './shapeFlags';
+// 制作地图
+export { makeMap };
 
 // 是否对象
 export const isObject = value => typeof value === 'object' && value !== null;

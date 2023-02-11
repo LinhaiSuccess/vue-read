@@ -1,0 +1,14 @@
+{
+  "name": "@vue/compiler-dom",
+  "version": "1.0.0",
+  "description": "Vue浏览器DOM编译",
+  "main": "index.js",
+  "buildOptions": {
+    "name": "VueCompilerDOM",
+    "formats": [
+      "global",
+      "cjs",
+      "esm-bundler"
+    ]
+  }
+}
