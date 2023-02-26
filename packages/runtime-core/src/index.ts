@@ -12,7 +12,7 @@ export * from './apiAsyncComponent';
 export * from './apiInject';
 export * from './apiLifecycle';
 export { traverse, watch } from './apiWatch';
-export { getCurrentInstance } from './component';
+export { getCurrentInstance, registerRuntimeCompiler } from './component';
 export { KeepAlive } from './components/KeepAlive';
 export { Teleport } from './components/Teleport';
 export { invokeDirectiveHook, withDirectives } from './directives';

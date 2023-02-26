@@ -1,0 +1,53 @@
+<!-- ###########################################################################
+ # File: /examples/vue/index.html
+ # Project: vue
+ # Created Date: 2023-02-26
+ # Author: lh(linhai<linhaibcf@gmail.com>)
+ # Module Name: Vue最后测试
+############################################################################ -->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>运行时编译测试</title>
+</head>
+
+<body>
+  <div id="app">
+
+    <Layout>
+      <template #top>
+        <div style="padding: 30px 0; font-size: 60px;">VueRead</div>
+      </template>
+
+      <template #center>
+        <ul>
+          <li v-for="task in tasks" :key="task.id">{{task.value}}</li>
+        </ul>
+        <p v-if="arrive">complete</p>
+        <p v-else>incomplete</p>
+      </template>
+
+      <template #bottom>
+        <button @click="increment(1)">累加</button>
+        <div v-text="count" :style="{ fontSize: '30px', color: 'blue' }"></div>
+      </template>
+    </Layout>
+
+    <Diversity :config="config" v-model:activate="activity">
+      <template v-slot={status}>
+        <p>{{status}}</p>
+      </template>
+    </Diversity>
+
+    <span>{{activity}}</span>
+
+  </div>
+  <script type="module" src="./js/index.js"></script>
+</body>
+
+</html>

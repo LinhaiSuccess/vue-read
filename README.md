@@ -88,45 +88,50 @@ Vue的设计理念和架构封装非常有益于自我提升，尤其是Vue3的�
 **模板编译**
 
 - [x] 模板解析
-- [x] AST转化 - 进展中
-- [x] 指令转化 - 待完成
-- [x] 代码生成 - 待完成
+- [x] AST转化
+- [x] 指令转化
+- [x] 代码生成
 
 **Vue统一入口**
 
-- [ ] 运行时编译注册 - 待完成
-- [ ] 编译到函数 - 待完成
+- [x] 运行时编译注册
+- [x] 编译到函数
 
 > vue/examples 包下有每个功能模块的测试示例
+>
+> vue/examples/vue 中为最终测试示例
 
 ## 使用
 
 当功能都实现后，可使用如下模板测试
 
 ```vue
-<Layout>
-  <template #top>
-    输入：<input type="text" v-model="name"/>
-    <br/>
-    打印：{{name}}
-  </template>
-  
-  <template #bottom>
-    性别：<div v-if="sex===1">男</div> <div v-else>女</div>
-    爱好：
-    <ul>
-      <li v-for="item in hobbys" :key="item.id">{{item.name}}</li>
-    </ul>
-    描述：<span v-text="description"></span> <br/>
-    <button @click="submit('b1')">提交</button>
-  </template>
-</Layout>
+  <Layout>
+    <template #top>
+      <div style="padding: 30px 0; font-size: 60px;">VueRead</div>
+    </template>
 
-<User :info="userInfo" :callback="cb" v-model:error="errorPrompt">
-  <template v-slot={message}>
-    <p :style="{color: 'blue'}">{{message}}</p>
-  </template>
-</User>
+    <template #center>
+      <ul>
+        <li v-for="task in tasks" :key="task.id">{{task.value}}</li>
+      </ul>
+      <p v-if="arrive">complete</p>
+      <p v-else>incomplete</p>
+    </template>
+
+    <template #bottom>
+      <button @click="increment(1)">累加</button>
+      <div v-text="count" :style="{ fontSize: '30px', color: 'blue' }"></div>
+    </template>
+  </Layout>
+
+  <Diversity :config="config" v-model:activate="activity">
+    <template v-slot={status}>
+      <p>{{status}}</p>
+    </template>
+  </Diversity>
+
+  <span>{{activity}}</span>
 ```
 
 ## 祝福

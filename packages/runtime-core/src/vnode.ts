@@ -12,8 +12,7 @@
  */
 
 import { isReactive, isReadonly } from '@vue/reactivity';
-import { isArray, isFunction, isNumber, isObject, isString, ShapeFlags } from '@vue/shared';
-import { normalizeClass, normalizeStyle } from 'packages/shared/src/normalizeProp';
+import { isArray, isFunction, isNumber, isObject, isString, normalizeClass, normalizeStyle, ShapeFlags } from '@vue/shared';
 import { isTeleport } from './components/Teleport';
 
 // 文本标识

@@ -108,6 +108,15 @@ const handleSetupResult = (instance, setupResult) => {
 const finishComponentSetup = instance => {
   // 如果处理 setup 结果时没有 render，则代表 setup 返回的是对象
   if (!instance.render) {
+    // 若注册了运行时编译且组件内也没有渲染函数，则就地编译
+    if (compile && !instance.type.render) {
+      // 取出用户组件内的 template 属性，里面存放的就是 html 模板字符串
+      const template = instance.type.template;
+      if (template) {
+        // 将编译后的render函数给用户组件的render
+        instance.type.render = compile(template);
+      }
+    }
     // 将用户的渲染函数挂载到组件实例中
     instance.render = instance.type.render;
   }
@@ -147,6 +156,10 @@ export const exposeSetupStateOnRenderContext = instance => {
     });
   });
 }
+
+// 注册运行时渲染
+let compile;
+export const registerRuntimeCompiler = _compile => compile = _compile;
 
 // 当前实例（正在执行的组件实例）
 export let currentInstance = null;

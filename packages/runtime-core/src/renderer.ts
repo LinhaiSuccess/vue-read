@@ -353,7 +353,7 @@ export function createRenderer(renderOptions) {
       // 当前节点可能是字符串，将节点转换为 Text 标识的虚拟节点
       const child = children[i] = normalizeVNode(children[i])
       // 递归继续 patch
-      patch(null, child, container, null, parentComponent);
+      child && patch(null, child, container, null, parentComponent);
     }
   }
 
