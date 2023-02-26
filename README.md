@@ -103,9 +103,10 @@ Vue的设计理念和架构封装非常有益于自我提升，尤其是Vue3的�
 
 ## 使用
 
-当功能都实现后，可使用如下模板测试
 
-```vue
+`最终测试示例模板`
+
+```html
   <Layout>
     <template #top>
       <div style="padding: 30px 0; font-size: 60px;">VueRead</div>
