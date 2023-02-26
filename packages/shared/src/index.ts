@@ -11,10 +11,14 @@ import { makeMap } from './makeMap';
 
 // 导出元素标签配置
 export * from './domTagConfig';
+// 导出属性工具
+export * from './normalizeProp';
 // 导出对比标识
 export * from './patchFlags';
 // 导出形状
 export * from './shapeFlags';
+// 导出插槽标识
+export * from './slotFlags';
 // 制作地图
 export { makeMap };
 
@@ -73,3 +77,6 @@ export const invokeArrayFns = (fns, arg?) => {
 
 // 首字母转大写
 export const capitalize = value => value.charAt(0).toUpperCase() + value.slice(1);
+
+// 是否Symbol
+export const isSymbol = value => typeof value === 'symbol';

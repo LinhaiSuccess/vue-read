@@ -6,7 +6,7 @@
  * Module Name: 组件编译测试入口
 *******************************************************************************/
 
-import run from './parse.js';
+import run from './compile.js';
 
 // 运行
 run();
